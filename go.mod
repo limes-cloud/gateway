@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/consul/api v1.24.0
-	github.com/limes-cloud/kratos v1.0.3
+	github.com/limes-cloud/kratos v1.0.4
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/prometheus/client_golang v1.16.0
 	go.opentelemetry.io/otel v1.19.0
@@ -106,5 +106,3 @@ require (
 	modernc.org/memory v1.5.0 // indirect
 	modernc.org/sqlite v1.23.1 // indirect
 )
-
-replace github.com/limes-cloud/kratos v1.0.3 => ../kratos
