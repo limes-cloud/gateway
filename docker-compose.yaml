@@ -5,7 +5,7 @@ services:
     network_mode: host
     restart: always
     volumes:
-      - ./cmd/gateway/config.yaml:/data/conf/config.yaml
+      - ./config/config.yaml:./config/config.yaml
     deploy:
       resources:
         limits:
