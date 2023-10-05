@@ -2,13 +2,13 @@ package bbr
 
 import (
 	"bytes"
+	"github.com/limes-cloud/gateway/config"
 	"io"
 	"net/http"
 
 	"github.com/go-kratos/aegis/ratelimit"
 	"github.com/go-kratos/aegis/ratelimit/bbr"
-	config "github.com/go-kratos/gateway/api/gateway/config/v1"
-	"github.com/go-kratos/gateway/middleware"
+	"github.com/limes-cloud/gateway/middleware"
 )
 
 var _nopBody = io.NopCloser(&bytes.Buffer{})

@@ -2,6 +2,8 @@ package cors
 
 import (
 	"bytes"
+	"github.com/limes-cloud/gateway/config"
+	"github.com/limes-cloud/gateway/utils"
 	"io"
 	"net/http"
 	"net/url"
@@ -9,12 +11,7 @@ import (
 	"strings"
 	"time"
 
-	config "github.com/go-kratos/gateway/api/gateway/config/v1"
-	v1 "github.com/go-kratos/gateway/api/gateway/middleware/cors/v1"
-	"github.com/go-kratos/gateway/middleware"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
-	"google.golang.org/protobuf/types/known/durationpb"
+	"github.com/limes-cloud/gateway/middleware"
 )
 
 var (
@@ -77,15 +74,15 @@ func newResponse(statusCode int, header http.Header) (*http.Response, error) {
 
 // Middleware automatically sets the allow response header.
 func Middleware(c *config.Middleware) (middleware.Middleware, error) {
-	options := &v1.Cors{
-		AllowCredentials:    defaultAllowCredentials,
+	options := &config.Cors{
+		AllowCredentials:    true,
 		AllowMethods:        defaultCorsMethods,
 		AllowHeaders:        defaultCorsHeaders,
-		AllowPrivateNetwork: defaultAllowPrivateNetwork,
-		MaxAge:              durationpb.New(time.Minute * 10),
+		AllowPrivateNetwork: false,
+		MaxAge:              time.Minute * 10,
 	}
 	if c.Options != nil {
-		if err := anypb.UnmarshalTo(c.Options, options, proto.UnmarshalOptions{Merge: true}); err != nil {
+		if err := utils.Copy(c.Options, options); err != nil {
 			return nil, err
 		}
 	}
@@ -128,7 +125,7 @@ func Middleware(c *config.Middleware) (middleware.Middleware, error) {
 	}, nil
 }
 
-func generateNormalHeaders(c *v1.Cors) http.Header {
+func generateNormalHeaders(c *config.Cors) http.Header {
 	headers := make(http.Header)
 	if c.AllowCredentials {
 		headers.Set(corsAllowCredentialsHeader, "true")
@@ -146,7 +143,7 @@ func generateNormalHeaders(c *v1.Cors) http.Header {
 	return headers
 }
 
-func generatePreflightHeaders(c *v1.Cors) http.Header {
+func generatePreflightHeaders(c *config.Cors) http.Header {
 	headers := make(http.Header)
 	if c.AllowCredentials {
 		headers.Set(corsAllowCredentialsHeader, "true")
@@ -159,8 +156,8 @@ func generatePreflightHeaders(c *v1.Cors) http.Header {
 		allowHeaders := convert(normalize(c.AllowHeaders), http.CanonicalHeaderKey)
 		headers.Set(corsAllowHeadersHeader, strings.Join(allowHeaders, ","))
 	}
-	if c.MaxAge != nil {
-		maxAge := int64(c.MaxAge.AsDuration() / time.Second)
+	if c.MaxAge != 0 {
+		maxAge := int64(c.MaxAge / time.Second)
 		headers.Set(corsMaxAgeHeader, strconv.FormatInt(maxAge, 10))
 	}
 	// Always set Vary headers

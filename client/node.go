@@ -3,18 +3,18 @@ package client
 import (
 	"crypto/tls"
 	"errors"
+	"github.com/limes-cloud/gateway/consts"
 	"net"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/selector"
+	"github.com/limes-cloud/kratos/selector"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/http2"
 
-	config "github.com/go-kratos/gateway/api/gateway/config/v1"
-	"github.com/go-kratos/gateway/middleware"
+	"github.com/limes-cloud/gateway/middleware"
 )
 
 var _ selector.Node = &node{}
@@ -93,7 +93,7 @@ func defaultH2Client() *http.Client {
 	}
 }
 
-func newNode(addr string, protocol config.Protocol, weight *int64, md map[string]string, version string, name string) *node {
+func newNode(addr string, protocol string, weight *int64, md map[string]string, version string, name string) *node {
 	node := &node{
 		protocol: protocol,
 		address:  addr,
@@ -102,7 +102,7 @@ func newNode(addr string, protocol config.Protocol, weight *int64, md map[string
 		version:  version,
 		name:     name,
 	}
-	if protocol == config.Protocol_GRPC {
+	if protocol == consts.GRPC {
 		node.client = _globalH2Client
 	} else {
 		node.client = _globalClient
@@ -118,11 +118,11 @@ type node struct {
 	metadata map[string]string
 
 	client   *http.Client
-	protocol config.Protocol
+	protocol string
 }
 
 func (n *node) Scheme() string {
-	return strings.ToLower(n.protocol.String())
+	return strings.ToLower(n.protocol)
 }
 
 func (n *node) Address() string {

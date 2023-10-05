@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"context"
+	"github.com/limes-cloud/gateway/config"
 
-	config "github.com/go-kratos/gateway/api/gateway/config/v1"
-	"github.com/go-kratos/kratos/v2/selector"
+	"github.com/limes-cloud/kratos/selector"
 )
 
 type contextKey struct{}
@@ -51,7 +51,7 @@ type metricsLabels struct {
 	endpoint *config.Endpoint
 }
 
-func (m *metricsLabels) Protocol() string { return m.endpoint.Protocol.String() }
+func (m *metricsLabels) Protocol() string { return m.endpoint.Protocol }
 func (m *metricsLabels) Method() string   { return m.endpoint.Method }
 func (m *metricsLabels) Path() string     { return m.endpoint.Path }
 func (m *metricsLabels) Service() string  { return m.endpoint.Metadata["service"] }

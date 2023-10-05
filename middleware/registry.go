@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"errors"
+	"github.com/limes-cloud/gateway/config"
 	"strings"
 
-	configv1 "github.com/go-kratos/gateway/api/gateway/config/v1"
-	"github.com/go-kratos/kratos/v2/log"
+	"github.com/limes-cloud/kratos/log"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -29,7 +29,7 @@ var ErrNotFound = errors.New("Middleware has not been registered")
 type Registry interface {
 	Register(name string, factory Factory)
 	RegisterV2(name string, factory FactoryV2)
-	Create(cfg *configv1.Middleware) (MiddlewareV2, error)
+	Create(cfg *config.Middleware) (MiddlewareV2, error)
 }
 
 type middlewareRegistry struct {
@@ -53,7 +53,7 @@ func (p *middlewareRegistry) RegisterV2(name string, factory FactoryV2) {
 }
 
 // Create instantiates a middleware based on `cfg`.
-func (p *middlewareRegistry) Create(cfg *configv1.Middleware) (MiddlewareV2, error) {
+func (p *middlewareRegistry) Create(cfg *config.Middleware) (MiddlewareV2, error) {
 	if method, ok := p.getMiddleware(createFullName(cfg.Name)); ok {
 		if cfg.Required {
 			// If the middleware is required, it must be created successfully.
@@ -100,6 +100,6 @@ func RegisterV2(name string, factory FactoryV2) {
 }
 
 // Create instantiates a middleware based on `cfg`.
-func Create(cfg *configv1.Middleware) (MiddlewareV2, error) {
+func Create(cfg *config.Middleware) (MiddlewareV2, error) {
 	return globalRegistry.Create(cfg)
 }

@@ -1,16 +1,13 @@
 package rewrite
 
 import (
+	"github.com/limes-cloud/gateway/config"
+	"github.com/limes-cloud/gateway/utils"
 	"net/http"
 	"path"
 	"strings"
 
-	config "github.com/go-kratos/gateway/api/gateway/config/v1"
-	v1 "github.com/go-kratos/gateway/api/gateway/middleware/rewrite/v1"
-
-	"github.com/go-kratos/gateway/middleware"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
+	"github.com/limes-cloud/gateway/middleware"
 )
 
 func init() {
@@ -29,9 +26,9 @@ func stripPrefix(origin string, prefix string) string {
 }
 
 func Middleware(c *config.Middleware) (middleware.Middleware, error) {
-	options := &v1.Rewrite{}
+	options := &config.Rewrite{}
 	if c.Options != nil {
-		if err := anypb.UnmarshalTo(c.Options, options, proto.UnmarshalOptions{Merge: true}); err != nil {
+		if err := utils.Copy(c.Options, options); err != nil {
 			return nil, err
 		}
 	}
@@ -39,14 +36,14 @@ func Middleware(c *config.Middleware) (middleware.Middleware, error) {
 	responseHeadersRewrite := options.ResponseHeadersRewrite
 	return func(next http.RoundTripper) http.RoundTripper {
 		return middleware.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			if options.PathRewrite != nil {
-				req.URL.Path = *options.PathRewrite
+			if options.PathRewrite != "" {
+				req.URL.Path = options.PathRewrite
 			}
-			if options.HostRewrite != nil {
-				req.Host = *options.HostRewrite
+			if options.HostRewrite != "" {
+				req.Host = options.HostRewrite
 			}
-			if options.StripPrefix != nil {
-				req.URL.Path = stripPrefix(req.URL.Path, options.GetStripPrefix())
+			if options.StripPrefix != "" {
+				req.URL.Path = stripPrefix(req.URL.Path, options.StripPrefix)
 			}
 			if requestHeadersRewrite != nil {
 				for key, value := range requestHeadersRewrite.Set {

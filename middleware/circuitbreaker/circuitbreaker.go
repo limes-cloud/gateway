@@ -2,6 +2,8 @@ package circuitbreaker
 
 import (
 	"bytes"
+	"github.com/limes-cloud/gateway/config"
+	"github.com/limes-cloud/gateway/utils"
 	"io"
 	"net/http"
 	"sync"
@@ -9,16 +11,12 @@ import (
 
 	"github.com/go-kratos/aegis/circuitbreaker"
 	"github.com/go-kratos/aegis/circuitbreaker/sre"
-	config "github.com/go-kratos/gateway/api/gateway/config/v1"
-	v1 "github.com/go-kratos/gateway/api/gateway/middleware/circuitbreaker/v1"
-	"github.com/go-kratos/gateway/client"
-	"github.com/go-kratos/gateway/middleware"
-	"github.com/go-kratos/gateway/proxy/condition"
-	"github.com/go-kratos/kratos/v2/log"
+	"github.com/limes-cloud/gateway/client"
+	"github.com/limes-cloud/gateway/middleware"
+	"github.com/limes-cloud/gateway/proxy/condition"
+	"github.com/limes-cloud/kratos/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/exp/rand"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 func Init(clientFactory client.Factory) {
@@ -37,15 +35,15 @@ var (
 )
 
 type ratioTrigger struct {
-	*v1.CircuitBreaker_Ratio
-	lock sync.Mutex
-	rand *rand.Rand
+	Ratio int64
+	lock  sync.Mutex
+	rand  *rand.Rand
 }
 
-func newRatioTrigger(in *v1.CircuitBreaker_Ratio) *ratioTrigger {
+func newRatioTrigger(ratio int64) *ratioTrigger {
 	return &ratioTrigger{
-		CircuitBreaker_Ratio: in,
-		rand:                 rand.New(rand.NewSource(uint64(time.Now().UnixNano()))),
+		Ratio: ratio,
+		rand:  rand.New(rand.NewSource(uint64(time.Now().UnixNano()))),
 	}
 }
 
@@ -66,9 +64,9 @@ func (nopTrigger) Allow() error { return nil }
 func (nopTrigger) MarkSuccess() {}
 func (nopTrigger) MarkFailed()  {}
 
-func makeBreakerTrigger(in *v1.CircuitBreaker) circuitbreaker.CircuitBreaker {
-	switch trigger := in.Trigger.(type) {
-	case *v1.CircuitBreaker_SuccessRatio:
+func makeBreakerTrigger(in *config.CircuitBreaker) circuitbreaker.CircuitBreaker {
+	trigger := in.Trigger
+	if trigger != nil && trigger.SuccessRatio != nil {
 		var opts []sre.Option
 		if trigger.SuccessRatio.Bucket != 0 {
 			opts = append(opts, sre.WithBucket(int(trigger.SuccessRatio.Bucket)))
@@ -79,29 +77,32 @@ func makeBreakerTrigger(in *v1.CircuitBreaker) circuitbreaker.CircuitBreaker {
 		if trigger.SuccessRatio.Success != 0 {
 			opts = append(opts, sre.WithSuccess(trigger.SuccessRatio.Success))
 		}
-		if trigger.SuccessRatio.Window != nil {
-			opts = append(opts, sre.WithWindow(trigger.SuccessRatio.Window.AsDuration()))
+		if trigger.SuccessRatio.Window != 0 {
+			opts = append(opts, sre.WithWindow(trigger.SuccessRatio.Window))
 		}
 		return sre.NewBreaker(opts...)
-	case *v1.CircuitBreaker_Ratio:
-		return newRatioTrigger(trigger)
-	default:
-		log.Warnf("Unrecoginzed circuit breaker trigger: %+v", trigger)
-		return nopTrigger{}
 	}
+
+	if trigger != nil && trigger.Ratio != 0 {
+		return newRatioTrigger(trigger.Ratio)
+	}
+
+	return nopTrigger{}
 }
 
-func makeOnBreakHandler(in *v1.CircuitBreaker, factory client.Factory) (http.RoundTripper, io.Closer, error) {
-	switch action := in.Action.(type) {
-	case *v1.CircuitBreaker_BackupService:
-		log.Infof("Making backup service as on break handler: %+v", action)
-		client, err := factory(action.BackupService.Endpoint)
+func makeOnBreakHandler(in *config.CircuitBreaker, factory client.Factory) (http.RoundTripper, io.Closer, error) {
+	action := in.Action
+	if action.BackupService != nil {
+		log.Infof("Making backup service as on break handler: %+v", action.BackupService)
+		client, err := factory(&action.BackupService.Endpoint)
 		if err != nil {
 			return nil, nil, err
 		}
 		return client, client, nil
-	case *v1.CircuitBreaker_ResponseData:
-		log.Infof("Making static response data as on break handler: %+v", action)
+	}
+
+	if action.ResponseData != nil {
+		log.Infof("Making static response data as on break handler: %+v", action.ResponseData)
 		return middleware.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			resp := &http.Response{
 				StatusCode: int(action.ResponseData.StatusCode),
@@ -113,17 +114,17 @@ func makeOnBreakHandler(in *v1.CircuitBreaker, factory client.Factory) (http.Rou
 			resp.Body = io.NopCloser(bytes.NewReader(action.ResponseData.Body))
 			return resp, nil
 		}), io.NopCloser(nil), nil
-	default:
-		log.Warnf("Unrecoginzed circuit breaker aciton: %+v", action)
-		return middleware.RoundTripperFunc(func(*http.Request) (*http.Response, error) {
-			// TBD: on break response
-			return &http.Response{
-				StatusCode: http.StatusServiceUnavailable,
-				Header:     http.Header{},
-				Body:       io.NopCloser(&bytes.Buffer{}),
-			}, nil
-		}), io.NopCloser(nil), nil
 	}
+
+	log.Warnf("Unrecoginzed circuit breaker aciton")
+	return middleware.RoundTripperFunc(func(*http.Request) (*http.Response, error) {
+		// TBD: on break response
+		return &http.Response{
+			StatusCode: http.StatusServiceUnavailable,
+			Header:     http.Header{},
+			Body:       io.NopCloser(&bytes.Buffer{}),
+		}, nil
+	}), io.NopCloser(nil), nil
 }
 
 func isSuccessResponse(conditions []condition.Condition, resp *http.Response) bool {
@@ -140,9 +141,9 @@ func deniedRequestIncr(req *http.Request) {
 
 func New(factory client.Factory) middleware.FactoryV2 {
 	return func(c *config.Middleware) (middleware.MiddlewareV2, error) {
-		options := &v1.CircuitBreaker{}
+		options := &config.CircuitBreaker{}
 		if c.Options != nil {
-			if err := anypb.UnmarshalTo(c.Options, options, proto.UnmarshalOptions{Merge: true}); err != nil {
+			if err := utils.Copy(c.Options, options); err != nil {
 				return nil, err
 			}
 		}
@@ -151,7 +152,7 @@ func New(factory client.Factory) middleware.FactoryV2 {
 		if err != nil {
 			return nil, err
 		}
-		assertCondtions, err := condition.ParseConditon(options.AssertCondtions...)
+		condtions, err := condition.ParseConditon(options.Conditions)
 		if err != nil {
 			return nil, err
 		}
@@ -171,7 +172,7 @@ func New(factory client.Factory) middleware.FactoryV2 {
 					breaker.MarkFailed()
 					return nil, err
 				}
-				if !isSuccessResponse(assertCondtions, resp) {
+				if !isSuccessResponse(condtions, resp) {
 					breaker.MarkFailed()
 					return resp, nil
 				}

@@ -1,12 +1,13 @@
 package client
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"time"
 
-	"github.com/go-kratos/gateway/middleware"
-	"github.com/go-kratos/kratos/v2/selector"
+	"github.com/limes-cloud/gateway/middleware"
+	"github.com/limes-cloud/kratos/selector"
 )
 
 type client struct {
@@ -31,7 +32,7 @@ func (c *client) Close() error {
 	return nil
 }
 
-func (c *client) RoundTrip(req *http.Request) (resp *http.Response, err error) {
+func (c *client) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctx := req.Context()
 	reqOpt, _ := middleware.FromRequestContext(ctx)
 	filter, _ := middleware.SelectorFiltersFromContext(ctx)
@@ -47,13 +48,21 @@ func (c *client) RoundTrip(req *http.Request) (resp *http.Response, err error) {
 	req.URL.Scheme = "http"
 	req.RequestURI = ""
 	startAt := time.Now()
-	resp, err = n.(*node).client.Do(req)
+	resp, err := n.(*node).client.Do(req)
 	reqOpt.UpstreamResponseTime = append(reqOpt.UpstreamResponseTime, time.Since(startAt).Seconds())
 	if err != nil {
 		done(ctx, selector.DoneInfo{Err: err})
 		reqOpt.UpstreamStatusCode = append(reqOpt.UpstreamStatusCode, 0)
 		return nil, err
 	}
+	if reqOpt.Endpoint.ResponseFormat {
+		body, length := ResponseFormat(req.Context(), resp.Body)
+		if length != 0 {
+			resp.Body = body
+			resp.Header.Set("Content-Length", fmt.Sprint(length))
+		}
+	}
+
 	reqOpt.UpstreamStatusCode = append(reqOpt.UpstreamStatusCode, resp.StatusCode)
 	reqOpt.DoneFunc = done
 	return resp, nil

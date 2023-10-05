@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/binary"
+	"github.com/limes-cloud/gateway/config"
+	"github.com/limes-cloud/gateway/consts"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 
-	config "github.com/go-kratos/gateway/api/gateway/config/v1"
-	"github.com/go-kratos/gateway/middleware"
+	"github.com/limes-cloud/gateway/middleware"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -44,7 +45,7 @@ func Middleware(c *config.Middleware) (middleware.Middleware, error) {
 			ctx := req.Context()
 			contentType := req.Header.Get("Content-Type")
 			endpoint, _ := middleware.EndpointFromContext(ctx)
-			if endpoint.Protocol != config.Protocol_GRPC || strings.HasPrefix(contentType, "application/grpc") {
+			if endpoint.Protocol != consts.GRPC || strings.HasPrefix(contentType, "application/grpc") {
 				return next.RoundTrip(req)
 			}
 			b, err := io.ReadAll(req.Body)

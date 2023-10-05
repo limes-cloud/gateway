@@ -3,11 +3,10 @@ package condition
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/limes-cloud/gateway/config"
 	"net/http"
 	"strconv"
 	"strings"
-
-	config "github.com/go-kratos/gateway/api/gateway/config/v1"
 )
 
 type Condition interface {
@@ -16,15 +15,15 @@ type Condition interface {
 }
 
 type byStatusCode struct {
-	*config.Condition_ByStatusCode
+	StatusCode  string
 	parsedCodes []int64
 }
 
 func (c *byStatusCode) Prepare() error {
-	c.parsedCodes = make([]int64, 0, len(c.ByStatusCode))
-	parts := strings.Split(c.ByStatusCode, "-")
+	c.parsedCodes = make([]int64, 0)
+	parts := strings.Split(c.StatusCode, "-")
 	if len(parts) == 0 || len(parts) > 2 {
-		return fmt.Errorf("invalid condition %s", c.ByStatusCode)
+		return fmt.Errorf("invalid condition %s", c.StatusCode)
 	}
 	c.parsedCodes = []int64{}
 	for _, p := range parts {
@@ -49,7 +48,7 @@ func (c *byStatusCode) Judge(resp *http.Response) bool {
 }
 
 type byHeader struct {
-	*config.Condition_ByHeader
+	Header *config.Header
 	parsed struct {
 		name   string
 		values map[string]struct{}
@@ -57,7 +56,7 @@ type byHeader struct {
 }
 
 func (c *byHeader) Judge(resp *http.Response) bool {
-	v := resp.Header.Get(c.ByHeader.Name)
+	v := resp.Header.Get(c.Header.Name)
 	if v == "" {
 		return false
 	}
@@ -66,10 +65,10 @@ func (c *byHeader) Judge(resp *http.Response) bool {
 }
 
 func (c *byHeader) Prepare() error {
-	c.parsed.name = c.ByHeader.Name
+	c.parsed.name = c.Header.Name
 	c.parsed.values = map[string]struct{}{}
-	if strings.HasPrefix(c.ByHeader.Value, "[") {
-		values, err := parseAsStringList(c.ByHeader.Value)
+	if strings.HasPrefix(c.Header.Value, "[") {
+		values, err := parseAsStringList(c.Header.Value)
 		if err != nil {
 			return err
 		}
@@ -78,7 +77,7 @@ func (c *byHeader) Prepare() error {
 		}
 		return nil
 	}
-	c.parsed.values[c.ByHeader.Value] = struct{}{}
+	c.parsed.values[c.Header.Value] = struct{}{}
 	return nil
 }
 
@@ -90,29 +89,31 @@ func parseAsStringList(in string) ([]string, error) {
 	return out, nil
 }
 
-func ParseConditon(in ...*config.Condition) ([]Condition, error) {
+func ParseConditon(in []config.Condition) ([]Condition, error) {
 	conditions := make([]Condition, 0, len(in))
 	for _, rawCond := range in {
-		switch v := rawCond.Condition.(type) {
-		case *config.Condition_ByHeader:
+		if rawCond.Header != nil {
 			cond := &byHeader{
-				Condition_ByHeader: v,
+				Header: rawCond.Header,
 			}
 			if err := cond.Prepare(); err != nil {
 				return nil, err
 			}
 			conditions = append(conditions, cond)
-		case *config.Condition_ByStatusCode:
-			cond := &byStatusCode{
-				Condition_ByStatusCode: v,
-			}
-			if err := cond.Prepare(); err != nil {
-				return nil, err
-			}
-			conditions = append(conditions, cond)
-		default:
-			return nil, fmt.Errorf("unknown condition type: %T", v)
+			continue
 		}
+
+		if rawCond.StatusCode != "" {
+			cond := &byStatusCode{
+				StatusCode: rawCond.StatusCode,
+			}
+			if err := cond.Prepare(); err != nil {
+				return nil, err
+			}
+			conditions = append(conditions, cond)
+			continue
+		}
+		return nil, fmt.Errorf("unknown condition ")
 	}
 	return conditions, nil
 }

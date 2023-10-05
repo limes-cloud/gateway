@@ -10,9 +10,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-kratos/gateway/router"
-	"github.com/go-kratos/kratos/v2/log"
 	"github.com/gorilla/mux"
+	"github.com/limes-cloud/gateway/router"
+	"github.com/limes-cloud/kratos/log"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 

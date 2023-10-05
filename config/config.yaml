@@ -1,0 +1,32 @@
+debug: true
+addr: 0.0.0.0:8080
+name: helloworld
+version: v1
+
+responseFormat: true
+middlewares:
+  - name: tracing
+  - name: logging
+  - name: transcoder
+  - name: cors
+    options:
+      allowCredentials: true
+      allowOrigins: ["*"]
+      allowMethods: ["GET","POST","OPTIONS"]
+endpoints:
+  - path: /hello/helloworld/*
+    timeout: 1s
+    protocol: HTTP
+    host: localhost
+    responseFormat: true
+    backends:
+      - target: '127.0.0.1:8000'
+    middlewares:
+      - name: circuitbreaker
+        options:
+          trigger:
+            successRatio: {"success":0.6, "request":1, "bucket":10, "window":3s}
+      - name: rewrite
+        options:
+          stripPrefix: /hello
+

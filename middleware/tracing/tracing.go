@@ -3,26 +3,24 @@ package tracing
 import (
 	"context"
 	"fmt"
+	"github.com/limes-cloud/gateway/config"
+	"github.com/limes-cloud/gateway/utils"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"log"
 	"net/http"
 	"sync"
 	"time"
 
-	config "github.com/go-kratos/gateway/api/gateway/config/v1"
-	v1 "github.com/go-kratos/gateway/api/gateway/middleware/tracing/v1"
-	"github.com/go-kratos/gateway/middleware"
-	"github.com/go-kratos/kratos/v2"
+	"github.com/limes-cloud/gateway/middleware"
+	"github.com/limes-cloud/kratos"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 const (
@@ -42,9 +40,9 @@ func init() {
 
 // Middleware is a opentelemetry middleware.
 func Middleware(c *config.Middleware) (middleware.Middleware, error) {
-	options := &v1.Tracing{}
+	options := &config.Tracing{}
 	if c.Options != nil {
-		if err := anypb.UnmarshalTo(c.Options, options, proto.UnmarshalOptions{Merge: true}); err != nil {
+		if err := utils.Copy(c.Options, options); err != nil {
 			return nil, err
 		}
 	}
@@ -89,42 +87,25 @@ func Middleware(c *config.Middleware) (middleware.Middleware, error) {
 	}, nil
 }
 
-func newTracerProvider(ctx context.Context, options *v1.Tracing) trace.TracerProvider {
+func newTracerProvider(ctx context.Context, options *config.Tracing) trace.TracerProvider {
 	var (
 		timeout     = defaultTimeout
 		serviceName = defaultServiceName
 	)
 
-	if appInfo, ok := kratos.FromContext(ctx); ok {
+	if appInfo, ok := kratos.GetAppFromContext(ctx); ok {
 		serviceName = appInfo.Name()
 	}
 
-	if options.Timeout != nil {
-		timeout = options.Timeout.AsDuration()
+	if options.Timeout != 0 {
+		timeout = options.Timeout
 	}
 
 	var sampler sdktrace.Sampler
-	if options.SampleRatio == nil {
+	if options.SampleRatio == 0 {
 		sampler = sdktrace.AlwaysSample()
 	} else {
-		sampler = sdktrace.TraceIDRatioBased(float64(*options.SampleRatio))
-	}
-
-	otlpoptions := []otlptracehttp.Option{
-		otlptracehttp.WithEndpoint(options.HttpEndpoint),
-		otlptracehttp.WithTimeout(timeout),
-	}
-	if options.Insecure != nil && !*options.Insecure {
-		otlpoptions = append(otlpoptions, otlptracehttp.WithInsecure())
-	}
-
-	client := otlptracehttp.NewClient(
-		otlpoptions...,
-	)
-
-	exporter, err := otlptrace.New(ctx, client)
-	if err != nil {
-		log.Fatalf("creating OTLP trace exporter: %v", err)
+		sampler = sdktrace.TraceIDRatioBased(options.SampleRatio)
 	}
 
 	// attributes for all requests
@@ -133,9 +114,33 @@ func newTracerProvider(ctx context.Context, options *v1.Tracing) trace.TracerPro
 		semconv.ServiceNameKey.String(serviceName),
 	)
 
-	return sdktrace.NewTracerProvider(
+	providerOptions := []sdktrace.TracerProviderOption{
 		sdktrace.WithSampler(sampler),
-		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(resources),
-	)
+	}
+
+	otlpoptions := []otlptracehttp.Option{}
+	if options.Endpoint != "" {
+		otlpoptions = append(otlpoptions, otlptracehttp.WithEndpoint(options.Endpoint))
+
+		if options.Timeout != 0 {
+			otlpoptions = append(otlpoptions, otlptracehttp.WithTimeout(timeout))
+		}
+
+		if !options.Insecure {
+			otlpoptions = append(otlpoptions, otlptracehttp.WithInsecure())
+		}
+
+		client := otlptracehttp.NewClient(
+			otlpoptions...,
+		)
+
+		exporter, err := otlptrace.New(ctx, client)
+		if err != nil {
+			log.Fatalf("creating OTLP trace exporter: %v", err)
+		}
+		providerOptions = append(providerOptions, sdktrace.WithBatcher(exporter))
+	}
+
+	return sdktrace.NewTracerProvider(providerOptions...)
 }

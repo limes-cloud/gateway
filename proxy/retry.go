@@ -2,12 +2,12 @@ package proxy
 
 import (
 	"context"
+	"github.com/limes-cloud/gateway/config"
 	"net/http"
 	"time"
 
 	"github.com/go-kratos/feature"
-	config "github.com/go-kratos/gateway/api/gateway/config/v1"
-	"github.com/go-kratos/gateway/proxy/condition"
+	"github.com/limes-cloud/gateway/proxy/condition"
 )
 
 var (
@@ -23,8 +23,8 @@ type retryStrategy struct {
 
 func calcTimeout(endpoint *config.Endpoint) time.Duration {
 	var timeout time.Duration
-	if endpoint.Timeout != nil {
-		timeout = endpoint.Timeout.AsDuration()
+	if endpoint.Timeout != 0 {
+		timeout = endpoint.Timeout
 	}
 	if timeout <= 0 {
 		timeout = time.Second
@@ -36,18 +36,18 @@ func calcAttempts(endpoint *config.Endpoint) int {
 	if endpoint.Retry == nil {
 		return 1
 	}
-	if endpoint.Retry.Attempts == 0 {
+	if endpoint.Retry.Count == 0 {
 		return 1
 	}
-	return int(endpoint.Retry.Attempts)
+	return endpoint.Retry.Count
 }
 
 func calcPerTryTimeout(endpoint *config.Endpoint) time.Duration {
 	var perTryTimeout time.Duration
-	if endpoint.Retry != nil && endpoint.Retry.PerTryTimeout != nil {
-		perTryTimeout = endpoint.Retry.PerTryTimeout.AsDuration()
-	} else if endpoint.Timeout != nil {
-		perTryTimeout = endpoint.Timeout.AsDuration()
+	if endpoint.Retry != nil && endpoint.Retry.Timeout != 0 {
+		perTryTimeout = endpoint.Retry.Timeout
+	} else if endpoint.Timeout != 0 {
+		perTryTimeout = endpoint.Timeout
 	}
 	if perTryTimeout <= 0 {
 		perTryTimeout = time.Second
@@ -73,7 +73,7 @@ func parseRetryConditon(endpoint *config.Endpoint) ([]condition.Condition, error
 	if endpoint.Retry == nil {
 		return []condition.Condition{}, nil
 	}
-	return condition.ParseConditon(endpoint.Retry.Conditions...)
+	return condition.ParseConditon(endpoint.Retry.Conditions)
 }
 
 func judgeRetryRequired(conditions []condition.Condition, resp *http.Response) bool {

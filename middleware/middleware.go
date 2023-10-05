@@ -1,14 +1,13 @@
 package middleware
 
 import (
+	"github.com/limes-cloud/gateway/config"
 	"io"
 	"net/http"
-
-	configv1 "github.com/go-kratos/gateway/api/gateway/config/v1"
 )
 
 // Factory is a middleware factory.
-type Factory func(*configv1.Middleware) (Middleware, error)
+type Factory func(*config.Middleware) (Middleware, error)
 
 // Middleware is handler middleware.
 type Middleware func(http.RoundTripper) http.RoundTripper
@@ -22,14 +21,14 @@ func (f RoundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
 }
 
-type FactoryV2 func(*configv1.Middleware) (MiddlewareV2, error)
+type FactoryV2 func(*config.Middleware) (MiddlewareV2, error)
 type MiddlewareV2 interface {
 	Process(http.RoundTripper) http.RoundTripper
 	io.Closer
 }
 
 func wrapFactory(in Factory) FactoryV2 {
-	return func(m *configv1.Middleware) (MiddlewareV2, error) {
+	return func(m *config.Middleware) (MiddlewareV2, error) {
 		v, err := in(m)
 		if err != nil {
 			return nil, err

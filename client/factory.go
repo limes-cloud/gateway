@@ -3,16 +3,15 @@ package client
 import (
 	"context"
 	"fmt"
+	"github.com/limes-cloud/gateway/config"
 	"strconv"
 	"strings"
 	"sync/atomic"
 
-	config "github.com/go-kratos/gateway/api/gateway/config/v1"
-
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/registry"
-	"github.com/go-kratos/kratos/v2/selector"
-	"github.com/go-kratos/kratos/v2/selector/p2c"
+	"github.com/limes-cloud/kratos/log"
+	"github.com/limes-cloud/kratos/registry"
+	"github.com/limes-cloud/kratos/selector"
+	"github.com/limes-cloud/kratos/selector/p2c"
 )
 
 // Factory is returns service client.
@@ -71,8 +70,7 @@ func (na *nodeApplier) apply(ctx context.Context) error {
 		}
 		switch target.Scheme {
 		case "direct":
-			weighted := backend.Weight // weight is only valid for direct scheme
-			node := newNode(backend.Target, na.endpoint.Protocol, weighted, map[string]string{}, "", "")
+			node := newNode(backend.Target, na.endpoint.Protocol, backend.Weight, map[string]string{}, "", "")
 			nodes = append(nodes, node)
 			na.picker.Apply(nodes)
 		case "discovery":
@@ -108,7 +106,7 @@ func (na *nodeApplier) Callback(services []*registry.ServiceInstance) error {
 	if len(services) == 0 {
 		return nil
 	}
-	scheme := strings.ToLower(na.endpoint.Protocol.String())
+	scheme := strings.ToLower(na.endpoint.Protocol)
 	nodes := make([]selector.Node, 0, len(services))
 	for _, ser := range services {
 		addr, err := parseEndpoint(ser.Endpoints, scheme, false)

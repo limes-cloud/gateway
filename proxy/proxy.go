@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/limes-cloud/gateway/config"
+	"github.com/limes-cloud/gateway/consts"
 	"io"
 	"net"
 	"net/http"
@@ -17,14 +19,13 @@ import (
 	"time"
 
 	"github.com/go-kratos/aegis/circuitbreaker/sre"
-	config "github.com/go-kratos/gateway/api/gateway/config/v1"
-	"github.com/go-kratos/gateway/client"
-	"github.com/go-kratos/gateway/middleware"
-	"github.com/go-kratos/gateway/router"
-	"github.com/go-kratos/gateway/router/mux"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/selector"
-	"github.com/go-kratos/kratos/v2/transport/http/status"
+	"github.com/limes-cloud/gateway/client"
+	"github.com/limes-cloud/gateway/middleware"
+	"github.com/limes-cloud/gateway/router"
+	"github.com/limes-cloud/gateway/router/mux"
+	"github.com/limes-cloud/kratos/log"
+	"github.com/limes-cloud/kratos/selector"
+	"github.com/limes-cloud/kratos/transport/http/status"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -100,7 +101,7 @@ func writeError(w http.ResponseWriter, r *http.Request, err error, labels middle
 		statusCode = 502
 	}
 	requestsTotalIncr(labels, statusCode)
-	if labels.Protocol() == config.Protocol_GRPC.String() {
+	if labels.Protocol() == consts.GRPC {
 		// see https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
 		code := strconv.Itoa(int(status.ToGRPCCode(statusCode)))
 		w.Header().Set("Content-Type", "application/grpc")
@@ -177,9 +178,9 @@ func New(clientFactory client.Factory, middlewareFactory middleware.FactoryV2) (
 	return p, nil
 }
 
-func (p *Proxy) buildMiddleware(ms []*config.Middleware, next http.RoundTripper) (http.RoundTripper, error) {
+func (p *Proxy) buildMiddleware(ms []config.Middleware, next http.RoundTripper) (http.RoundTripper, error) {
 	for i := len(ms) - 1; i >= 0; i-- {
-		m, err := p.middlewareFactory(ms[i])
+		m, err := p.middlewareFactory(&ms[i])
 		if err != nil {
 			if errors.Is(err, middleware.ErrNotFound) {
 				log.Errorf("Skip does not exist middleware: %s", ms[i].Name)
@@ -212,7 +213,7 @@ func splitRetryMetricsHandler(e *config.Endpoint) (func(int), func(int, error)) 
 	return success, failed
 }
 
-func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []*config.Middleware) (_ http.Handler, _ io.Closer, retError error) {
+func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ http.Handler, _ io.Closer, retError error) {
 	client, err := p.clientFactory(e)
 	if err != nil {
 		return nil, nil, err
@@ -377,10 +378,11 @@ func closeOnError(closer io.Closer, err *error) {
 }
 
 // Update updates service endpoint.
-func (p *Proxy) Update(c *config.Gateway) (retError error) {
+func (p *Proxy) Update(c *config.Config) (retError error) {
 	router := mux.NewRouter(http.HandlerFunc(notFoundHandler), http.HandlerFunc(methodNotAllowedHandler))
 	for _, e := range c.Endpoints {
-		handler, closer, err := p.buildEndpoint(e, c.Middlewares)
+		ep := e
+		handler, closer, err := p.buildEndpoint(&ep, c.Middlewares)
 		if err != nil {
 			return err
 		}
