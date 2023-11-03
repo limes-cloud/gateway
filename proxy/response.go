@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"bytes"
 	"encoding/json"
 	"github.com/limes-cloud/gateway/consts"
 	"io"
@@ -15,19 +14,6 @@ type Response struct {
 	Message  string            `json:"message,omitempty"`
 	Metadata map[string]string `json:"metadata,omitempty"`
 	TraceID  string            `json:"trace_id,omitempty"`
-}
-
-type response struct {
-	data *bytes.Reader
-	body io.ReadCloser
-}
-
-func (r *response) Read(b []byte) (n int, err error) {
-	return r.data.Read(b)
-}
-
-func (r *response) Close() error {
-	return r.body.Close()
 }
 
 func ResponseFormat(response *http.Response) []byte {
@@ -50,9 +36,6 @@ func ResponseFormat(response *http.Response) []byte {
 		newRes.Message, _ = res["message"].(string)
 		newRes.Metadata, _ = res["metadata"].(map[string]string)
 		newRes.Reason, _ = res["reason"].(string)
-		//if err := json.Unmarshal(b, &newRes); err != nil {
-		//	return reader, 0
-		//}
 	} else {
 		newRes.Data = res
 	}
