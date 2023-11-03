@@ -2,6 +2,7 @@ package logging
 
 import (
 	"github.com/limes-cloud/gateway/config"
+	"github.com/limes-cloud/kratos/middleware/tracing"
 	"net/http"
 	"strings"
 	"time"
@@ -46,6 +47,8 @@ func Middleware(c *config.Middleware) (middleware.Middleware, error) {
 				"backend_code", reqOpt.UpstreamStatusCode,
 				"backend_latency", reqOpt.UpstreamResponseTime,
 				"last_attempt", reqOpt.LastAttempt,
+				"trace", tracing.TraceID()(ctx),
+				"span", tracing.SpanID()(ctx),
 			)
 			return reply, err
 		})

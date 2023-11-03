@@ -1,12 +1,11 @@
-package client
+package proxy
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"github.com/limes-cloud/gateway/consts"
-	"github.com/limes-cloud/kratos/middleware/tracing"
 	"io"
+	"net/http"
 )
 
 type Response struct {
@@ -31,32 +30,33 @@ func (r *response) Close() error {
 	return r.body.Close()
 }
 
-func ResponseFormat(ctx context.Context, reader io.ReadCloser) (io.ReadCloser, int) {
-	b, _ := io.ReadAll(reader)
-	res := map[string]interface{}{}
+func ResponseFormat(response *http.Response) []byte {
+	b, _ := io.ReadAll(response.Body)
 
+	res := map[string]interface{}{}
 	if json.Unmarshal(b, &res) != nil {
-		return reader, 0
+		return b
 	}
 
 	newRes := Response{
 		Code:    consts.HTTP_SUCCESS_CODE,
 		Message: consts.HTTP_SUCCESS_MESSAGE,
-		TraceID: tracing.TraceID()(ctx).(string),
+		Reason:  consts.HTTP_SUCCESS_REASON,
+		TraceID: response.Header.Get(consts.TRACE_ID),
 	}
 	// 上游返回error
 	if res["code"] != nil && res["reason"] != nil {
-		if err := json.Unmarshal(b, &newRes); err != nil {
-			return reader, 0
-		}
+		newRes.Code, _ = res["code"].(int32)
+		newRes.Message, _ = res["message"].(string)
+		newRes.Metadata, _ = res["metadata"].(map[string]string)
+		newRes.Reason, _ = res["reason"].(string)
+		//if err := json.Unmarshal(b, &newRes); err != nil {
+		//	return reader, 0
+		//}
 	} else {
 		newRes.Data = res
 	}
 
 	b, _ = json.Marshal(newRes)
-
-	return &response{
-		data: bytes.NewReader(b),
-		body: reader,
-	}, len(b)
+	return b
 }

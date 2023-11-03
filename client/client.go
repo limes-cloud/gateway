@@ -1,7 +1,10 @@
 package client
 
 import (
-	"fmt"
+	"github.com/limes-cloud/gateway/consts"
+	"github.com/limes-cloud/kratos/middleware/tracing"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"io"
 	"net/http"
 	"time"
@@ -48,6 +51,10 @@ func (c *client) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.URL.Scheme = "http"
 	req.RequestURI = ""
 	startAt := time.Now()
+
+	// Inject the context into the HTTP headers
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
+
 	resp, err := n.(*node).client.Do(req)
 	reqOpt.UpstreamResponseTime = append(reqOpt.UpstreamResponseTime, time.Since(startAt).Seconds())
 	if err != nil {
@@ -55,13 +62,14 @@ func (c *client) RoundTrip(req *http.Request) (*http.Response, error) {
 		reqOpt.UpstreamStatusCode = append(reqOpt.UpstreamStatusCode, 0)
 		return nil, err
 	}
-	if reqOpt.Endpoint.ResponseFormat {
-		body, length := ResponseFormat(req.Context(), resp.Body)
-		if length != 0 {
-			resp.Body = body
-			resp.Header.Set("Content-Length", fmt.Sprint(length))
-		}
-	}
+	resp.Header.Set(consts.TRACE_ID, tracing.TraceID()(ctx).(string))
+	//if reqOpt.Endpoint.ResponseFormat {
+	//	body, length := ResponseFormat(req.Context(), resp.Body)
+	//	if length != 0 {
+	//		resp.Body = body
+	//		resp.Header.Set("Content-Length", fmt.Sprint(length))
+	//	}
+	//}
 
 	reqOpt.UpstreamStatusCode = append(reqOpt.UpstreamStatusCode, resp.StatusCode)
 	reqOpt.DoneFunc = done

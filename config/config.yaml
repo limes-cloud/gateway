@@ -4,22 +4,22 @@ name: gateway
 version: v1
 
 middlewares:
+  - name: cors
   - name: tracing
   - name: logging
   - name: transcoder
-  - name: cors
     options:
       allowCredentials: true
       allowOrigins: ["*"]
-      allowMethods: ["GET","POST","OPTIONS"]
+      allowMethods: ["GET","POST","PUT","DELETE","OPTIONS"]
 endpoints:
-  - path: /hello/helloworld/*
-    timeout: 1s
+  - path: /*
+    timeout: 60s
     protocol: HTTP
     host: localhost
     responseFormat: true
     backends:
-      - target: '127.0.0.1:8000'
+      - target: '127.0.0.1:8001'
     middlewares:
       - name: circuitbreaker
         options:
@@ -27,5 +27,5 @@ endpoints:
             successRatio: {"success":0.6, "request":1, "bucket":10, "window":3s}
       - name: rewrite
         options:
-          stripPrefix: /hello
+          stripPrefix: /basic
 

@@ -317,7 +317,9 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 
 		headers := w.Header()
 		for k, v := range resp.Header {
-			headers[k] = v
+			if k != "Content-Length" {
+				headers[k] = v
+			}
 		}
 		w.WriteHeader(resp.StatusCode)
 
@@ -326,7 +328,18 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 				return true
 			}
 			defer resp.Body.Close()
-			sent, err := io.Copy(w, resp.Body)
+
+			sent := int64(0)
+			if reqOpts.Endpoint.ResponseFormat && strings.Contains(resp.Header.Get("Content-Type"), "json") {
+				body := ResponseFormat(resp)
+				sent = int64(len(body))
+				_, err = w.Write(body)
+			} else {
+				sent, err = io.Copy(w, resp.Body)
+			}
+
+			resp.Header.Set("Content-Length", fmt.Sprint(sent))
+
 			if err != nil {
 				reqOpts.DoneFunc(ctx, selector.DoneInfo{Err: err})
 				sentBytesAdd(labels, sent)
