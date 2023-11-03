@@ -236,7 +236,7 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 	}
 	labels := middleware.NewMetricsLabels(e)
 	markSuccessStat, markFailedStat := splitRetryMetricsHandler(e)
-	retryBreaker := sre.NewBreaker()
+	retryBreaker := sre.NewBreaker(sre.WithSuccess(0.8))
 	markSuccess := func(i int) {
 		markSuccessStat(i)
 		if i > 0 {
