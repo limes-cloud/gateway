@@ -63,13 +63,6 @@ func (c *client) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	resp.Header.Set(consts.TRACE_ID, tracing.TraceID()(ctx).(string))
-	//if reqOpt.Endpoint.ResponseFormat {
-	//	body, length := ResponseFormat(req.Context(), resp.Body)
-	//	if length != 0 {
-	//		resp.Body = body
-	//		resp.Header.Set("Content-Length", fmt.Sprint(length))
-	//	}
-	//}
 
 	reqOpt.UpstreamStatusCode = append(reqOpt.UpstreamStatusCode, resp.StatusCode)
 	reqOpt.DoneFunc = done

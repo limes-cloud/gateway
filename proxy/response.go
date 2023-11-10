@@ -19,8 +19,8 @@ type Response struct {
 func ResponseFormat(response *http.Response) []byte {
 	b, _ := io.ReadAll(response.Body)
 
-	res := map[string]interface{}{}
-	if json.Unmarshal(b, &res) != nil {
+	var res interface{}
+	if err := json.Unmarshal(b, &res); err != nil {
 		return b
 	}
 
@@ -31,11 +31,13 @@ func ResponseFormat(response *http.Response) []byte {
 		TraceID: response.Header.Get(consts.TRACE_ID),
 	}
 	// 上游返回error
-	if res["code"] != nil && res["reason"] != nil {
-		newRes.Code, _ = res["code"].(int32)
-		newRes.Message, _ = res["message"].(string)
-		newRes.Metadata, _ = res["metadata"].(map[string]string)
-		newRes.Reason, _ = res["reason"].(string)
+	m, ok := res.(map[string]interface{})
+
+	if ok && m["code"] != nil && m["reason"] != nil {
+		newRes.Code, _ = m["code"].(int32)
+		newRes.Message, _ = m["message"].(string)
+		newRes.Metadata, _ = m["metadata"].(map[string]string)
+		newRes.Reason, _ = m["reason"].(string)
 	} else {
 		newRes.Data = res
 	}

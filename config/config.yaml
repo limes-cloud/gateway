@@ -1,31 +1,31 @@
 debug: true
-addr: 0.0.0.0:8080
+addr: 0.0.0.0:7080
 name: gateway
 version: v1
-
 middlewares:
   - name: cors
+    options:
+      allowCredentials: true
+      allowOrigins: [ "*" ]
+      allowMethods: [ "GET","POST","PUT","DELETE","OPTIONS" ]
+      AllowHeaders: ["Content-Type", "Content-Length", "Authorization"]
+      ExposeHeaders: ["Content-Length", "Access-Control-Allow-Headers"]
   - name: tracing
   - name: logging
   - name: transcoder
-    options:
-      allowCredentials: true
-      allowOrigins: ["*"]
-      allowMethods: ["GET","POST","PUT","DELETE","OPTIONS"]
 endpoints:
-  - path: /*
-    timeout: 60s
+  - path: /basic/*
+    timeout: 10s
     protocol: HTTP
     host: localhost
     responseFormat: true
     backends:
-      - target: '127.0.0.1:8001'
-    middlewares:
-      - name: circuitbreaker
-        options:
-          trigger:
-            successRatio: {"success":0.6, "request":1, "bucket":10, "window":3s}
-      - name: rewrite
-        options:
-          stripPrefix: /basic
+      - target: '127.0.0.1:7002'
+  - path: /configure/*
+    timeout: 10s
+    protocol: HTTP
+    host: localhost
+    responseFormat: true
+    backends:
+      - target: '127.0.0.1:7003'
 
