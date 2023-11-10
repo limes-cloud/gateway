@@ -1,25 +1,18 @@
-FROM golang:1.17 AS builder
+FROM golang:alpine AS build
+ENV GOPROXY=https://goproxy.cn,direct
+ENV GO111MODULE on
+WORKDIR /go/cache
+ADD go.mod .
+ADD go.sum .
+RUN go mod download
 
-COPY . /src
-WORKDIR /src
-RUN mkdir -p bin/
-RUN GOPROXY=https://goproxy.cn go build -o ./bin/ ./...
+WORKDIR /go/build
+ADD . .
+RUN GOOS=linux CGO_ENABLED=0 go build -ldflags="-s -w" -installsuffix cgo -o gateway cmd/gateway/main.go
 
-FROM debian:stable-slim
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-		ca-certificates  \
-        netbase \
-        && rm -rf /var/lib/apt/lists/ \
-        && apt-get autoremove -y && apt-get autoclean -y
-
-COPY --from=builder /src/bin /app
-
-WORKDIR /app
-
-EXPOSE 8080
-EXPOSE 7070
-
-VOLUME /data/conf
-
-CMD ["./gateway", "-conf", "config/config.yaml"]
+FROM alpine
+EXPOSE 7080
+WORKDIR /go/build
+COPY ./config/config.yaml /go/build/config/config.yaml
+COPY --from=build /go/build/gateway /go/build/gateway
+CMD ["./gateway","-c","config/config.yaml"]
