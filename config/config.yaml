@@ -3,6 +3,7 @@ addr: 0.0.0.0:7080
 name: gateway
 version: v1
 middlewares:
+  - name: bbr
   - name: cors
     options:
       allowCredentials: true
@@ -27,5 +28,9 @@ endpoints:
     #host: localhost
     responseFormat: true
     backends:
-      - target: '127.0.0.1:7003'
-
+      - target: '127.0.0.1:7081'
+    middlewares:
+      - name: auth
+        options:
+          url: http://localhost:7080/basic/v1/auth
+          method: POST

@@ -8,11 +8,11 @@ RUN go mod download
 
 WORKDIR /go/build
 ADD . .
-RUN GOOS=linux CGO_ENABLED=0 go build -ldflags="-s -w" -installsuffix cgo -o gateway cmd/gateway/main.go
+RUN GOOS=linux CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=${AppVersion} -X main.Name=${AppName} -X main.ConfigHost=${ConfigHost}  -X main.ConfigToken=${ConfigToken}" -installsuffix cgo -o gateway cmd/gateway/main.go
 
 FROM alpine
 EXPOSE 7080
 WORKDIR /go/build
-COPY ./config/config.yaml /go/build/config/config.yaml
+#COPY ./config/config.yaml /go/build/config/config.yaml
 COPY --from=build /go/build/gateway /go/build/gateway
-CMD ["./gateway","-c","config/config.yaml"]
+CMD ["./gateway"]

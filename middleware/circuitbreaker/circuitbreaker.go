@@ -105,7 +105,7 @@ func makeOnBreakHandler(in *config.CircuitBreaker, factory client.Factory) (http
 		log.Infof("Making static response data as on break handler: %+v", action.ResponseData)
 		return middleware.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			resp := &http.Response{
-				StatusCode: int(action.ResponseData.StatusCode),
+				StatusCode: action.ResponseData.StatusCode,
 				Header:     http.Header{},
 			}
 			for _, h := range action.ResponseData.Header {

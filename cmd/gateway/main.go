@@ -9,12 +9,14 @@ import (
 	"github.com/limes-cloud/gateway/proxy"
 	"github.com/limes-cloud/gateway/proxy/debug"
 	"github.com/limes-cloud/gateway/server"
+	"github.com/limes-cloud/kratos/contrib/config/configure"
 	"github.com/limes-cloud/kratos/registry"
 	"github.com/limes-cloud/kratos/transport"
 	"net/http"
 	"os"
 
 	_ "github.com/limes-cloud/gateway/discovery/consul"
+	_ "github.com/limes-cloud/gateway/middleware/auth"
 	_ "github.com/limes-cloud/gateway/middleware/bbr"
 	_ "github.com/limes-cloud/gateway/middleware/cors"
 	_ "github.com/limes-cloud/gateway/middleware/logging"
@@ -26,13 +28,14 @@ import (
 
 	"github.com/limes-cloud/gateway/config"
 	"github.com/limes-cloud/kratos"
-	"github.com/limes-cloud/kratos/config/file"
 	"github.com/limes-cloud/kratos/log"
 	"github.com/limes-cloud/kratos/middleware/tracing"
 )
 
 // go build -ldflags "-X main.Version=x.y.z"
 var (
+	ConfigHost  string
+	ConfigToken string
 	// Name is the name of the compiled software.
 	Name string
 	// Version is the version of the compiled software.
@@ -42,7 +45,9 @@ var (
 )
 
 func main() {
-	conf, err := config.New(file.NewSource("config/config.yaml"))
+
+	conf, err := config.New(configure.New(ConfigHost, Name, ConfigToken))
+	//conf, err := config.New(file.NewSource("config/config.yaml"))
 	if err != nil {
 		log.Fatal(err.Error())
 	}
