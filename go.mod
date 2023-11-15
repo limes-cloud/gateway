@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.3.1
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/consul/api v1.24.0
-	github.com/limes-cloud/kratos v1.0.23
+	github.com/limes-cloud/kratos v1.0.26
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/prometheus/client_golang v1.16.0
 	go.opentelemetry.io/otel v1.19.0
@@ -33,9 +33,9 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/envoyproxy/protoc-gen-validate v1.0.2 // indirect
 	github.com/fatih/color v1.14.1 // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/glebarez/go-sqlite v1.21.2 // indirect
 	github.com/glebarez/sqlite v1.9.0 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
@@ -63,11 +63,10 @@ require (
 	github.com/jackc/pgx/v5 v5.3.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
-	github.com/limes-cloud/configure v1.0.3 // indirect
 	github.com/limes-cloud/library/gte v0.0.0-20231025145839-5dc0dee270f9 // indirect
 	github.com/lufia/plan9stats v0.0.0-20230326075908-cb1d2100619a // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.18 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/microsoft/go-mssqldb v1.1.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -78,6 +77,7 @@ require (
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.10.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
+	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.6 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/tidwall/gjson v1.17.0 // indirect
