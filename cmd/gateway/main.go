@@ -9,7 +9,7 @@ import (
 	"github.com/limes-cloud/gateway/proxy"
 	"github.com/limes-cloud/gateway/proxy/debug"
 	"github.com/limes-cloud/gateway/server"
-	"github.com/limes-cloud/kratos/contrib/config/configure"
+	"github.com/limes-cloud/kratos/config/file"
 	"github.com/limes-cloud/kratos/registry"
 	"github.com/limes-cloud/kratos/transport"
 	"net/http"
@@ -45,9 +45,13 @@ var (
 )
 
 func main() {
-
-	conf, err := config.New(configure.New(ConfigHost, Name, ConfigToken))
-	//conf, err := config.New(file.NewSource("config/config.yaml"))
+	//Name = "configure"
+	//Version = "v1.0"
+	//ConfigHost = "localhost:7082"
+	//ConfigToken = "8A62C35740D5817A3F8C6958C4BE6B2C"
+	//
+	//conf, err := config.New(configure.New(ConfigHost, Name, ConfigToken))
+	conf, err := config.New(file.NewSource("config/config.yaml"))
 	if err != nil {
 		log.Fatal(err.Error())
 	}
