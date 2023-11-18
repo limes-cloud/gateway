@@ -45,7 +45,7 @@ var (
 )
 
 func main() {
-	conf, err := config.New(configure.New(ConfigHost, Name, ConfigToken))
+	conf, err := config.New(configure.NewFromEnv())
 	if err != nil {
 		log.Fatal(err.Error())
 	}
