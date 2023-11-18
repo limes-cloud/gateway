@@ -42,7 +42,6 @@ func Middleware(c *config.Middleware) (middleware.Middleware, error) {
 			}
 			byteBody, _ := json.Marshal(body)
 
-			options.URL = "http://localhost:7080/basic/v1/auth"
 			request, err := http.NewRequest("POST", options.URL, bytes.NewReader(byteBody))
 			if err != nil {
 				return &http.Response{
