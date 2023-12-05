@@ -6,8 +6,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/gorilla/mux"
-	"github.com/limes-cloud/kratos/log"
 )
 
 const (

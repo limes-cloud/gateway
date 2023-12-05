@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/limes-cloud/kratos/log"
+	"github.com/go-kratos/kratos/v2/log"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )

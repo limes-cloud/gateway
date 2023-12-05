@@ -8,10 +8,10 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/limes-cloud/kratos/log"
-	"github.com/limes-cloud/kratos/registry"
-	"github.com/limes-cloud/kratos/selector"
-	"github.com/limes-cloud/kratos/selector/p2c"
+	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/registry"
+	"github.com/go-kratos/kratos/v2/selector"
+	"github.com/go-kratos/kratos/v2/selector/p2c"
 )
 
 // Factory is returns service client.

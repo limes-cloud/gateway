@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/limes-cloud/kratos/registry"
+	"github.com/go-kratos/kratos/v2/registry"
 )
 
 var globalRegistry = NewRegistry()

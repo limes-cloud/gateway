@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/limes-cloud/gateway/config"
 
-	"github.com/limes-cloud/kratos/selector"
+	"github.com/go-kratos/kratos/v2/selector"
 )
 
 type contextKey struct{}

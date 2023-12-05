@@ -1,11 +1,12 @@
 package config
 
 import (
-	kc "github.com/limes-cloud/kratos/config"
+	kc "github.com/go-kratos/kratos/v2/config"
+	"github.com/limes-cloud/kratosx/config"
 )
 
 type Config struct {
-	conf        kc.Config
+	conf        config.Config
 	Debug       bool
 	Addr        string
 	Discovery   string
@@ -17,20 +18,20 @@ type Watch func(*Config)
 
 // New 新建并初始化配置
 func New(source kc.Source) (*Config, error) {
-	kcIns := kc.New(kc.WithSource(source))
-	if err := kcIns.Load(); err != nil {
+	ins := config.New(source)
+	if err := ins.Load(); err != nil {
 		return nil, err
 	}
 
 	conf := &Config{
-		conf: kcIns,
+		conf: ins,
 	}
-	return conf, kcIns.Scan(conf)
+	return conf, ins.Scan(conf)
 }
 
 // Watch 监听配置
 func (c *Config) Watch(key string, fn Watch) {
-	_ = c.conf.Watch(key, func(s string, value kc.Value) {
+	c.conf.Watch(key, func(value config.Value) {
 		fn(c)
 	})
 }

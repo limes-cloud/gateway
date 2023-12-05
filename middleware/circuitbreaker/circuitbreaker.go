@@ -11,10 +11,10 @@ import (
 
 	"github.com/go-kratos/aegis/circuitbreaker"
 	"github.com/go-kratos/aegis/circuitbreaker/sre"
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/limes-cloud/gateway/client"
 	"github.com/limes-cloud/gateway/middleware"
 	"github.com/limes-cloud/gateway/proxy/condition"
-	"github.com/limes-cloud/kratos/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/exp/rand"
 )

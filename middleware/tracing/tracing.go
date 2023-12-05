@@ -3,16 +3,17 @@ package tracing
 import (
 	"context"
 	"fmt"
-	"github.com/limes-cloud/gateway/config"
-	"github.com/limes-cloud/gateway/utils"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"log"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/go-kratos/kratos/v2"
+	"github.com/limes-cloud/gateway/config"
+	"github.com/limes-cloud/gateway/utils"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+
 	"github.com/limes-cloud/gateway/middleware"
-	"github.com/limes-cloud/kratos"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -93,7 +94,7 @@ func newTracerProvider(ctx context.Context, options *config.Tracing) trace.Trace
 		serviceName = defaultServiceName
 	)
 
-	if appInfo, ok := kratos.GetAppFromContext(ctx); ok {
+	if appInfo, ok := kratos.FromContext(ctx); ok {
 		serviceName = appInfo.Name()
 	}
 

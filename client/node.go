@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/limes-cloud/kratos/selector"
+	"github.com/go-kratos/kratos/v2/selector"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/http2"
 

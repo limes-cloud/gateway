@@ -1,16 +1,16 @@
 package client
 
 import (
+	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/limes-cloud/gateway/consts"
-	"github.com/limes-cloud/kratos/middleware/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"io"
 	"net/http"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/selector"
 	"github.com/limes-cloud/gateway/middleware"
-	"github.com/limes-cloud/kratos/selector"
 )
 
 type client struct {

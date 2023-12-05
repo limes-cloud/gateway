@@ -2,18 +2,24 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
+
+	"github.com/limes-cloud/kratosx"
+
+	"github.com/go-kratos/kratos/v2"
+	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/registry"
+	"github.com/go-kratos/kratos/v2/transport"
+	configClient "github.com/limes-cloud/configure/client"
 	"github.com/limes-cloud/gateway/client"
+	"github.com/limes-cloud/gateway/config"
 	"github.com/limes-cloud/gateway/discovery"
 	"github.com/limes-cloud/gateway/middleware"
 	"github.com/limes-cloud/gateway/middleware/circuitbreaker"
 	"github.com/limes-cloud/gateway/proxy"
 	"github.com/limes-cloud/gateway/proxy/debug"
 	"github.com/limes-cloud/gateway/server"
-	"github.com/limes-cloud/kratos/contrib/config/configure"
-	"github.com/limes-cloud/kratos/registry"
-	"github.com/limes-cloud/kratos/transport"
-	"net/http"
-	"os"
 
 	_ "github.com/limes-cloud/gateway/discovery/consul"
 	_ "github.com/limes-cloud/gateway/middleware/auth"
@@ -24,50 +30,24 @@ import (
 	_ "github.com/limes-cloud/gateway/middleware/tracing"
 	_ "github.com/limes-cloud/gateway/middleware/transcoder"
 	_ "go.uber.org/automaxprocs"
-	_ "net/http/pprof"
-
-	"github.com/limes-cloud/gateway/config"
-	"github.com/limes-cloud/kratos"
-	"github.com/limes-cloud/kratos/log"
-	"github.com/limes-cloud/kratos/middleware/tracing"
-)
-
-// go build -ldflags "-X main.Version=x.y.z"
-var (
-	ConfigHost  string
-	ConfigToken string
-	// Name is the name of the compiled software.
-	Name string
-	// Version is the version of the compiled software.
-	Version string
-
-	id, _ = os.Hostname()
 )
 
 func main() {
-	conf, err := config.New(configure.NewFromEnv())
+	conf, err := config.New(configClient.NewFromEnv())
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	server, err := NewServer(conf)
+	srv, err := NewServer(conf)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	app := kratos.New(
-		kratos.ID(id),
-		kratos.Name(Name),
-		kratos.Version(Version),
-		kratos.Metadata(map[string]string{}),
-		kratos.Server(server),
-		kratos.LoggerWith(kratos.LogField{
-			"id":      id,
-			"name":    Name,
-			"version": Version,
-			"trace":   tracing.TraceID(),
-			"span":    tracing.SpanID(),
-		}),
+	app := kratosx.New(
+		kratosx.Config(configClient.NewFromEnv()),
+		kratosx.Options(
+			kratos.Server(srv),
+		),
 	)
 
 	if err := app.Run(); err != nil {

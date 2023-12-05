@@ -1,14 +1,14 @@
 package logging
 
 import (
+	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/limes-cloud/gateway/config"
-	"github.com/limes-cloud/kratos/middleware/tracing"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/limes-cloud/gateway/middleware"
-	"github.com/limes-cloud/kratos/log"
 )
 
 func init() {

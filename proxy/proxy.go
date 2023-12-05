@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-kratos/aegis/circuitbreaker/sre"
+	"github.com/go-kratos/kratos/v2/selector"
 	"github.com/limes-cloud/gateway/config"
 	"github.com/limes-cloud/gateway/consts"
-	"github.com/limes-cloud/kratos/selector"
 	"io"
 	"net"
 	"net/http"
@@ -20,12 +20,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/transport/http/status"
 	"github.com/limes-cloud/gateway/client"
 	"github.com/limes-cloud/gateway/middleware"
 	"github.com/limes-cloud/gateway/router"
 	"github.com/limes-cloud/gateway/router/mux"
-	"github.com/limes-cloud/kratos/log"
-	"github.com/limes-cloud/kratos/transport/http/status"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
