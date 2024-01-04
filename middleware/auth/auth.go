@@ -3,13 +3,13 @@ package auth
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/limes-cloud/gateway/config"
-	"github.com/limes-cloud/gateway/utils"
 	"io"
 	"net/http"
 	"regexp"
 
+	"github.com/limes-cloud/gateway/config"
 	"github.com/limes-cloud/gateway/middleware"
+	"github.com/limes-cloud/gateway/utils"
 )
 
 func init() {
@@ -34,7 +34,7 @@ func (as *Auth) isWhitelist(method, path string) bool {
 
 		// 将*替换为匹配任意多字符的正则表达式
 		pattern := "^" + item.Path + "$"
-		pattern = regexp.MustCompile("/\\*").ReplaceAllString(pattern, "/.+")
+		pattern = regexp.MustCompile(`/\*`).ReplaceAllString(pattern, "/.+")
 
 		// 编译正则表达式
 		re := regexp.MustCompile(pattern)

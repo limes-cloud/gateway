@@ -2,15 +2,16 @@ package proxy
 
 import (
 	"encoding/json"
-	"github.com/limes-cloud/gateway/consts"
 	"io"
 	"net/http"
+
+	"github.com/limes-cloud/gateway/consts"
 )
 
 type Response struct {
 	Code     int32             `json:"code,omitempty"`
 	Reason   string            `json:"reason,omitempty"`
-	Data     interface{}       `json:"data"`
+	Data     any               `json:"data"`
 	Message  string            `json:"message,omitempty"`
 	Metadata map[string]string `json:"metadata,omitempty"`
 	TraceID  string            `json:"trace_id,omitempty"`
@@ -19,7 +20,7 @@ type Response struct {
 func ResponseFormat(response *http.Response) []byte {
 	b, _ := io.ReadAll(response.Body)
 
-	var res interface{}
+	var res any
 	if err := json.Unmarshal(b, &res); err != nil {
 		return b
 	}
@@ -31,7 +32,7 @@ func ResponseFormat(response *http.Response) []byte {
 		TraceID: response.Header.Get(consts.TRACE_ID),
 	}
 	// 上游返回error
-	m, ok := res.(map[string]interface{})
+	m, ok := res.(map[string]any)
 
 	if ok && m["code"] != nil && m["reason"] != nil {
 		newRes.Code, _ = m["code"].(int32)
