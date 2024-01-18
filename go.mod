@@ -13,7 +13,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/consul/api v1.26.1
 	github.com/limes-cloud/configure v1.0.14
-	github.com/limes-cloud/kratosx v1.0.6
+	github.com/limes-cloud/kratosx v1.0.11
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/prometheus/client_golang v1.16.0
 	go.opentelemetry.io/otel v1.21.0
