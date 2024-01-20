@@ -15,20 +15,13 @@ middlewares:
   - name: logging
   - name: transcoder
 endpoints:
-  - path: /basic/*
-    timeout: 10s
-    protocol: HTTP
-    #host: localhost
-    responseFormat: true
-    backends:
-      - target: '127.0.0.1:7002'
   - path: /configure/*
     timeout: 10s
     protocol: HTTP
     #host: localhost
     responseFormat: true
     backends:
-      - target: '127.0.0.1:7081'
+      - target: '127.0.0.1:6081'
     middlewares:
       - name: auth
         options:
