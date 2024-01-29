@@ -69,7 +69,7 @@ func NewServer(conf *config.Config) (transport.Server, error) {
 		return nil, fmt.Errorf("failed to update service conf: %v", err)
 	}
 	// 监听配置变化
-	conf.Watch("endpoints", func(c *config.Config) {
+	conf.WatchEndpoints(func(c *config.Config) {
 		if er := pxy.Update(c); er != nil {
 			log.Errorf("failed to update service config: %v", err)
 		}

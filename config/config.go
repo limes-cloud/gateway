@@ -2,6 +2,7 @@ package config
 
 import (
 	kc "github.com/go-kratos/kratos/v2/config"
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/limes-cloud/kratosx/config"
 )
 
@@ -29,9 +30,15 @@ func New(source kc.Source) (*Config, error) {
 	return conf, ins.Scan(conf)
 }
 
-// Watch 监听配置
-func (c *Config) Watch(key string, fn Watch) {
-	c.conf.Watch(key, func(value config.Value) {
+// WatchEndpoints 监听配置
+func (c *Config) WatchEndpoints(fn Watch) {
+	c.conf.Watch("endpoints", func(value config.Value) {
+		var ends []Endpoint
+		if err := value.Scan(&ends); err != nil {
+			log.Error("watch endpoints change error:" + err.Error())
+			return
+		}
+		c.Endpoints = ends
 		fn(c)
 	})
 }
