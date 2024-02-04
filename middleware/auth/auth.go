@@ -7,8 +7,11 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/limes-cloud/kratosx"
+
 	"github.com/limes-cloud/gateway/config"
 	"github.com/limes-cloud/gateway/middleware"
+	"github.com/limes-cloud/gateway/proxy"
 	"github.com/limes-cloud/gateway/utils"
 )
 
@@ -108,6 +111,10 @@ func Middleware(c *config.Middleware) (middleware.Middleware, error) {
 					Header:     make(http.Header),
 				}, nil
 			}
+
+			kratosx.MustContext(req.Context()).
+				Authentication().
+				SetAuth(req, string(proxy.GetData(response)))
 
 			return next.RoundTrip(req)
 		})

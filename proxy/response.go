@@ -46,3 +46,13 @@ func ResponseFormat(response *http.Response) []byte {
 	b, _ = json.Marshal(newRes)
 	return b
 }
+
+func GetData(response *http.Response) []byte {
+	b, _ := io.ReadAll(response.Body)
+	res := Response{}
+	if err := json.Unmarshal(b, &res); err != nil {
+		return b
+	}
+	b, _ = json.Marshal(res.Data)
+	return b
+}
