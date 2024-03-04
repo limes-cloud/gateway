@@ -1,15 +1,16 @@
 package client
 
 import (
-	"github.com/go-kratos/kratos/v2/middleware/tracing"
-	"github.com/limes-cloud/gateway/consts"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
 	"io"
 	"net/http"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/selector"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+
+	"github.com/limes-cloud/gateway/consts"
 	"github.com/limes-cloud/gateway/middleware"
 )
 
