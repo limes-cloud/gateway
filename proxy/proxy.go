@@ -6,10 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-kratos/aegis/circuitbreaker/sre"
-	"github.com/go-kratos/kratos/v2/selector"
-	"github.com/limes-cloud/gateway/config"
-	"github.com/limes-cloud/gateway/consts"
 	"io"
 	"net"
 	"net/http"
@@ -20,13 +16,18 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/go-kratos/aegis/circuitbreaker/sre"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/selector"
 	"github.com/go-kratos/kratos/v2/transport/http/status"
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/limes-cloud/gateway/client"
+	"github.com/limes-cloud/gateway/config"
+	"github.com/limes-cloud/gateway/consts"
 	"github.com/limes-cloud/gateway/middleware"
 	"github.com/limes-cloud/gateway/router"
 	"github.com/limes-cloud/gateway/router/mux"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -315,11 +316,13 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 			return
 		}
 
+		hasJson := strings.Contains(resp.Header.Get("Content-Type"), "json")
 		headers := w.Header()
 		for k, v := range resp.Header {
-			if k != "Content-Length" {
-				headers[k] = v
+			if k == "Content-Length" && hasJson {
+				continue
 			}
+			headers[k] = v
 		}
 		w.WriteHeader(resp.StatusCode)
 
@@ -330,7 +333,7 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 			defer resp.Body.Close()
 
 			sent := int64(0)
-			if reqOpts.Endpoint.ResponseFormat && strings.Contains(resp.Header.Get("Content-Type"), "json") {
+			if reqOpts.Endpoint.ResponseFormat && hasJson {
 				body := ResponseFormat(resp)
 				sent = int64(len(body))
 				_, err = w.Write(body)
@@ -410,7 +413,7 @@ func (p *Proxy) Update(c *config.Config) (retError error) {
 	return nil
 }
 
-func tryCloseRouter(in interface{}) {
+func tryCloseRouter(in any) {
 	if in == nil {
 		return
 	}
