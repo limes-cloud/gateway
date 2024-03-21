@@ -5,31 +5,29 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
-	"github.com/limes-cloud/kratosx"
-
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/registry"
 	"github.com/go-kratos/kratos/v2/transport"
 	configClient "github.com/limes-cloud/configure/client"
+	_ "go.uber.org/automaxprocs"
+
 	"github.com/limes-cloud/gateway/client"
 	"github.com/limes-cloud/gateway/config"
 	"github.com/limes-cloud/gateway/discovery"
-	"github.com/limes-cloud/gateway/middleware"
-	"github.com/limes-cloud/gateway/middleware/circuitbreaker"
-	"github.com/limes-cloud/gateway/proxy"
-	"github.com/limes-cloud/gateway/proxy/debug"
-	"github.com/limes-cloud/gateway/server"
-
 	_ "github.com/limes-cloud/gateway/discovery/consul"
+	"github.com/limes-cloud/gateway/middleware"
 	_ "github.com/limes-cloud/gateway/middleware/auth"
 	_ "github.com/limes-cloud/gateway/middleware/bbr"
+	"github.com/limes-cloud/gateway/middleware/circuitbreaker"
 	_ "github.com/limes-cloud/gateway/middleware/cors"
 	_ "github.com/limes-cloud/gateway/middleware/logging"
 	_ "github.com/limes-cloud/gateway/middleware/rewrite"
 	_ "github.com/limes-cloud/gateway/middleware/tracing"
 	_ "github.com/limes-cloud/gateway/middleware/transcoder"
-	_ "go.uber.org/automaxprocs"
+	"github.com/limes-cloud/gateway/proxy"
+	"github.com/limes-cloud/gateway/proxy/debug"
+	"github.com/limes-cloud/gateway/server"
 )
 
 func main() {
@@ -43,11 +41,8 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	app := kratosx.New(
-		kratosx.Config(configClient.NewFromEnv()),
-		kratosx.Options(
-			kratos.Server(srv),
-		),
+	app := kratos.New(
+		kratos.Server(srv),
 	)
 
 	if err := app.Run(); err != nil {

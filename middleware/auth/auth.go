@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/limes-cloud/kratosx"
 
@@ -54,6 +55,7 @@ func (as *Auth) isWhitelist(method, path string) bool {
 type RequestInfo struct {
 	Path   string `json:"path"`
 	Method string `json:"method"`
+	Data   any    `json:"data"`
 }
 
 var _nopBody = io.NopCloser(&bytes.Buffer{})
@@ -75,18 +77,31 @@ func Middleware(c *config.Middleware) (middleware.Middleware, error) {
 				return next.RoundTrip(req)
 			}
 
+			var data any
+			if req.Method == http.MethodGet || req.Method == http.MethodDelete {
+				data = req.URL.Query()
+			} else if strings.Contains(req.Header.Get("Content-Type"), "json") {
+				dataBody, _ := io.ReadAll(req.Body)
+				req.Body = io.NopCloser(bytes.NewBuffer(dataBody))
+				_ = json.Unmarshal(dataBody, &data)
+			}
+
 			body := RequestInfo{
 				Path:   req.URL.Path,
 				Method: req.Method,
+				Data:   data,
 			}
 			byteBody, _ := json.Marshal(body)
-
 			request, err := http.NewRequest(auth.Method, auth.URL, bytes.NewReader(byteBody))
+			//
+			// jsonHeader := http.Header{}
+			// jsonHeader.Add("Content-Type", auth.ContentType)
 			if err != nil {
 				return &http.Response{
 					Status:     http.StatusText(http.StatusUnauthorized),
 					StatusCode: http.StatusUnauthorized,
 					Body:       _nopBody,
+					// Header:     jsonHeader,
 				}, nil
 			}
 
@@ -100,6 +115,7 @@ func Middleware(c *config.Middleware) (middleware.Middleware, error) {
 					Status:     http.StatusText(http.StatusUnauthorized),
 					StatusCode: http.StatusUnauthorized,
 					Body:       _nopBody,
+					// Header:     jsonHeader,
 				}, nil
 			}
 
@@ -108,7 +124,7 @@ func Middleware(c *config.Middleware) (middleware.Middleware, error) {
 					Status:     http.StatusText(response.StatusCode),
 					StatusCode: response.StatusCode,
 					Body:       response.Body,
-					Header:     make(http.Header),
+					// Header:     jsonHeader,
 				}, nil
 			}
 
