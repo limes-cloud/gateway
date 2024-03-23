@@ -9,7 +9,7 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/registry"
 	"github.com/go-kratos/kratos/v2/transport"
-	configClient "github.com/limes-cloud/configure/client"
+	configure "github.com/limes-cloud/configure/api/client"
 	_ "go.uber.org/automaxprocs"
 
 	"github.com/limes-cloud/gateway/client"
@@ -31,7 +31,7 @@ import (
 )
 
 func main() {
-	conf, err := config.New(configClient.NewFromEnv())
+	conf, err := config.New(configure.NewFromEnv())
 	if err != nil {
 		log.Fatal(err.Error())
 	}
