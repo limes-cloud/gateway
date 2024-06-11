@@ -6,10 +6,10 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/go-kratos/kratos/v2"
+	"github.com/go-kratos/kratos/v2/config/file"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/registry"
 	"github.com/go-kratos/kratos/v2/transport"
-	configure "github.com/limes-cloud/configure/api/client"
 	_ "go.uber.org/automaxprocs"
 
 	"github.com/limes-cloud/gateway/client"
@@ -31,7 +31,7 @@ import (
 )
 
 func main() {
-	conf, err := config.New(configure.NewFromEnv())
+	conf, err := config.New(file.NewSource("config/config.yaml"))
 	if err != nil {
 		log.Fatal(err.Error())
 	}
