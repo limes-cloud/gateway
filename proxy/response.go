@@ -14,7 +14,7 @@ type Response struct {
 	Data     any               `json:"data"`
 	Message  string            `json:"message,omitempty"`
 	Metadata map[string]string `json:"metadata,omitempty"`
-	TraceID  string            `json:"trace_id,omitempty"`
+	TraceID  string            `json:"traceId,omitempty"`
 }
 
 func ResponseFormat(response *http.Response) []byte {
