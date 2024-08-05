@@ -317,6 +317,7 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 		}
 
 		hasJson := strings.Contains(resp.Header.Get("Content-Type"), "json")
+		hasEvent := strings.Contains(resp.Header.Get("Content-Type"), "text/event-stream")
 		headers := w.Header()
 		for k, v := range resp.Header {
 			if k == "Content-Length" && hasJson {
@@ -332,11 +333,50 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 			}
 			defer resp.Body.Close()
 
+			eventCopy := func(dst io.Writer, src io.Reader) (int64, error) {
+				flusher, ok := w.(http.Flusher)
+				if !ok {
+					return io.Copy(dst, src)
+				}
+
+				buf := make([]byte, 2048)
+				written := int64(0)
+				for {
+					nr, er := src.Read(buf)
+					if nr > 0 {
+						nw, ew := dst.Write(buf[0:nr])
+						if nw < 0 || nr < nw {
+							if ew == nil {
+								return 0, ew
+							}
+						}
+						written += int64(nw)
+						if ew != nil {
+							return 0, ew
+						}
+						if nr != nw {
+							return 0, io.ErrShortWrite
+						}
+					}
+					flusher.Flush()
+
+					if er != nil && er != io.EOF {
+						return 0, er
+					}
+					if er == io.EOF {
+						break
+					}
+				}
+				return written, nil
+			}
+
 			sent := int64(0)
 			if reqOpts.Endpoint.ResponseFormat && hasJson {
 				body := ResponseFormat(resp)
 				sent = int64(len(body))
 				_, err = w.Write(body)
+			} else if hasEvent {
+				sent, err = eventCopy(w, resp.Body)
 			} else {
 				sent, err = io.Copy(w, resp.Body)
 			}
