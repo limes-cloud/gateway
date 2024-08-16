@@ -339,7 +339,7 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 					return io.Copy(dst, src)
 				}
 
-				buf := make([]byte, 2048)
+				buf := make([]byte, 1024)
 				written := int64(0)
 				for {
 					nr, er := src.Read(buf)
