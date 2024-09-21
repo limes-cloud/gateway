@@ -336,7 +336,6 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 			eventCopy := func(dst io.Writer, src io.Reader) (int64, error) {
 				flusher, ok := w.(http.Flusher)
 				if !ok {
-					fmt.Println("not Flusher")
 					return io.Copy(dst, src)
 				}
 
@@ -359,7 +358,6 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 							return 0, io.ErrShortWrite
 						}
 					}
-					fmt.Println("event Flush")
 					flusher.Flush()
 
 					if er != nil && er != io.EOF {
