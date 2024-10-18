@@ -317,7 +317,7 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 		}
 
 		hasJson := strings.Contains(resp.Header.Get("Content-Type"), "json")
-		hasEvent := strings.Contains(resp.Header.Get("Content-Type"), "text/event-stream")
+		hasStream := strings.Contains(resp.Header.Get("Content-Type"), "stream")
 		headers := w.Header()
 		for k, v := range resp.Header {
 			if k == "Content-Length" && hasJson {
@@ -375,7 +375,7 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 				body := ResponseFormat(resp)
 				sent = int64(len(body))
 				_, err = w.Write(body)
-			} else if hasEvent {
+			} else if hasStream {
 				sent, err = eventCopy(w, resp.Body)
 			} else {
 				sent, err = io.Copy(w, resp.Body)
