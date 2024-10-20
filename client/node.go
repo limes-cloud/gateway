@@ -3,7 +3,6 @@ package client
 import (
 	"crypto/tls"
 	"errors"
-	"github.com/limes-cloud/gateway/consts"
 	"net"
 	"net/http"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/http2"
 
+	"github.com/limes-cloud/gateway/consts"
 	"github.com/limes-cloud/gateway/middleware"
 )
 

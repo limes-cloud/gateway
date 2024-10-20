@@ -12,8 +12,9 @@ import (
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/gorilla/mux"
-	"github.com/limes-cloud/gateway/router"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/limes-cloud/gateway/router"
 )
 
 var EnableStrictSlash = parseBool(os.Getenv("ENABLE_STRICT_SLASH"), false)
@@ -132,7 +133,7 @@ type RouterInspect struct {
 	Methods          []string `json:"methods"`
 }
 
-func InspectMuxRouter(in interface{}) []*RouterInspect {
+func InspectMuxRouter(in any) []*RouterInspect {
 	r, ok := in.(*muxRouter)
 	if !ok {
 		return nil

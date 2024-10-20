@@ -58,10 +58,10 @@ func NewProxy(handler http.Handler, addr string) *ProxyServer {
 				IdleTimeout:          idleTimeout,
 				MaxConcurrentStreams: math.MaxUint32,
 			}),
-			ReadTimeout:       readTimeout,
+			// ReadTimeout:       readTimeout,
 			ReadHeaderTimeout: readHeaderTimeout,
-			WriteTimeout:      writeTimeout,
-			IdleTimeout:       idleTimeout,
+			// WriteTimeout:      writeTimeout,
+			IdleTimeout: idleTimeout,
 		},
 	}
 }
