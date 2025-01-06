@@ -15,9 +15,9 @@ import (
 
 var (
 	readHeaderTimeout = time.Second * 10
-	readTimeout       = time.Second * 15
-	writeTimeout      = time.Second * 15
-	idleTimeout       = time.Second * 120
+	//readTimeout       = time.Second * 15
+	//writeTimeout      = time.Second * 15
+	idleTimeout = time.Second * 120
 )
 
 func init() {
@@ -27,16 +27,16 @@ func init() {
 			panic(err)
 		}
 	}
-	if v := os.Getenv("PROXY_READ_TIMEOUT"); v != "" {
-		if readTimeout, err = time.ParseDuration(v); err != nil {
-			panic(err)
-		}
-	}
-	if v := os.Getenv("PROXY_WRITE_TIMEOUT"); v != "" {
-		if writeTimeout, err = time.ParseDuration(v); err != nil {
-			panic(err)
-		}
-	}
+	//if v := os.Getenv("PROXY_READ_TIMEOUT"); v != "" {
+	//	if readTimeout, err = time.ParseDuration(v); err != nil {
+	//		panic(err)
+	//	}
+	//}
+	//if v := os.Getenv("PROXY_WRITE_TIMEOUT"); v != "" {
+	//	if writeTimeout, err = time.ParseDuration(v); err != nil {
+	//		panic(err)
+	//	}
+	//}
 	if v := os.Getenv("PROXY_IDLE_TIMEOUT"); v != "" {
 		if idleTimeout, err = time.ParseDuration(v); err != nil {
 			panic(err)
@@ -58,9 +58,9 @@ func NewProxy(handler http.Handler, addr string) *ProxyServer {
 				IdleTimeout:          idleTimeout,
 				MaxConcurrentStreams: math.MaxUint32,
 			}),
-			// ReadTimeout:       readTimeout,
+			//ReadTimeout:       readTimeout,
 			ReadHeaderTimeout: readHeaderTimeout,
-			// WriteTimeout:      writeTimeout,
+			//WriteTimeout:      writeTimeout,
 			IdleTimeout: idleTimeout,
 		},
 	}

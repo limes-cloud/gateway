@@ -107,7 +107,7 @@ func (s *serviceWatcher) Add(ctx context.Context, discovery registry.Discovery, 
 
 			if len(ws.selectedInstances) > 0 {
 				LOG.Infof("Using cached %d selected instances on endpoint: %s, hash: %s", len(ws.selectedInstances), endpoint, instancesSetHash(ws.selectedInstances))
-				applier.Callback(ws.selectedInstances)
+				_ = applier.Callback(ws.selectedInstances)
 				return true
 			}
 
@@ -136,7 +136,7 @@ func (s *serviceWatcher) Add(ctx context.Context, discovery registry.Discovery, 
 			}
 			LOG.Infof("Succeeded to do initialize services discovery on endpoint: %s, %d services, hash: %s", endpoint, len(services), instancesSetHash(ws.selectedInstances))
 			ws.selectedInstances = services
-			applier.Callback(services)
+			_ = applier.Callback(services)
 		}()
 
 		go func() {
@@ -241,13 +241,13 @@ func (s *serviceWatcher) DebugHandler() http.Handler {
 		service := r.URL.Query().Get("service")
 		nodes, _ := s.getSelectedCache(service)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(nodes)
+		_ = json.NewEncoder(w).Encode(nodes)
 	})
 	debugMux.HandleFunc("/debug/watcher/appliers", func(w http.ResponseWriter, r *http.Request) {
 		service := r.URL.Query().Get("service")
 		appliers, _ := s.getAppliers(service)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(appliers)
+		_ = json.NewEncoder(w).Encode(appliers)
 	})
 	return debugMux
 }

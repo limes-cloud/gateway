@@ -485,13 +485,13 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func (p *Proxy) DebugHandler() http.Handler {
 	debugMux := http.NewServeMux()
 	debugMux.HandleFunc("/debug/proxy/router/inspect", func(rw http.ResponseWriter, r *http.Request) {
-		router, ok := p.router.Load().(router.Router)
+		rt, ok := p.router.Load().(router.Router)
 		if !ok {
 			return
 		}
-		inspect := mux.InspectMuxRouter(router)
+		inspect := mux.InspectMuxRouter(rt)
 		rw.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(rw).Encode(inspect)
+		_ = json.NewEncoder(rw).Encode(inspect)
 	})
 	return debugMux
 }
