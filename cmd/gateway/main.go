@@ -23,6 +23,7 @@ import (
 	_ "github.com/limes-cloud/gateway/middleware/cors"
 	_ "github.com/limes-cloud/gateway/middleware/logging"
 	_ "github.com/limes-cloud/gateway/middleware/rewrite"
+	_ "github.com/limes-cloud/gateway/middleware/signature"
 	_ "github.com/limes-cloud/gateway/middleware/tracing"
 	_ "github.com/limes-cloud/gateway/middleware/transcoder"
 	"github.com/limes-cloud/gateway/proxy"

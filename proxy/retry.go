@@ -2,11 +2,12 @@ package proxy
 
 import (
 	"context"
-	"github.com/limes-cloud/gateway/config"
 	"net/http"
 	"time"
 
 	"github.com/go-kratos/feature"
+
+	"github.com/limes-cloud/gateway/config"
 	"github.com/limes-cloud/gateway/proxy/condition"
 )
 
@@ -22,12 +23,9 @@ type retryStrategy struct {
 }
 
 func calcTimeout(endpoint *config.Endpoint) time.Duration {
-	var timeout time.Duration
+	var timeout time.Duration = 0
 	if endpoint.Timeout != 0 {
 		timeout = endpoint.Timeout
-	}
-	if timeout <= 0 {
-		timeout = time.Second
 	}
 	return timeout
 }
@@ -48,6 +46,9 @@ func calcPerTryTimeout(endpoint *config.Endpoint) time.Duration {
 		perTryTimeout = endpoint.Retry.Timeout
 	} else if endpoint.Timeout != 0 {
 		perTryTimeout = endpoint.Timeout
+	}
+	if endpoint.Timeout == 0 {
+		return 0
 	}
 	if perTryTimeout <= 0 {
 		perTryTimeout = time.Second
@@ -81,5 +82,8 @@ func judgeRetryRequired(conditions []condition.Condition, resp *http.Response) b
 }
 
 func defaultAttemptTimeoutContext(ctx context.Context, _ *http.Request, timeout time.Duration) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(ctx, timeout)
+	if timeout > 0 {
+		return context.WithTimeout(ctx, timeout)
+	}
+	return context.WithCancel(ctx)
 }

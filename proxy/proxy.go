@@ -256,7 +256,12 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 
 		reqOpts := middleware.NewRequestOptions(e)
 		ctx := middleware.NewRequestContext(req.Context(), reqOpts)
-		ctx, cancel := context.WithTimeout(ctx, retryStrategy.timeout)
+		var cancel context.CancelFunc
+		if retryStrategy.timeout > 0 {
+			ctx, cancel = context.WithTimeout(ctx, retryStrategy.timeout)
+		} else {
+			ctx, cancel = context.WithCancel(ctx)
+		}
 		defer cancel()
 		defer func() {
 			requestsDurationObserve(labels, time.Since(startTime).Seconds())
@@ -293,6 +298,7 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 				markFailed(i, err)
 				break
 			}
+
 			tryCtx, cancel := p.Interceptors.prepareAttemptTimeoutContext(ctx, req, retryStrategy.perTryTimeout)
 			defer cancel()
 			reader := bytes.NewReader(body)
