@@ -1,8 +1,10 @@
 package client
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
@@ -12,6 +14,10 @@ import (
 
 	"github.com/limes-cloud/gateway/consts"
 	"github.com/limes-cloud/gateway/middleware"
+)
+
+const (
+	transformKey = "X-WG-Transform"
 )
 
 type client struct {
@@ -47,10 +53,17 @@ func (c *client) RoundTrip(req *http.Request) (*http.Response, error) {
 	reqOpt.CurrentNode = n
 
 	addr := n.Address()
+	// 判断是否进行转发
+	tAddr := c.transform(req)
+	if tAddr != "" {
+		addr = tAddr
+	}
+
 	reqOpt.Backends = append(reqOpt.Backends, addr)
 	req.URL.Host = addr
 	req.URL.Scheme = "http"
 	req.RequestURI = ""
+	req.Header.Del(transformKey)
 	startAt := time.Now()
 
 	// Inject the context into the HTTP headers
@@ -68,4 +81,29 @@ func (c *client) RoundTrip(req *http.Request) (*http.Response, error) {
 	reqOpt.UpstreamStatusCode = append(reqOpt.UpstreamStatusCode, resp.StatusCode)
 	reqOpt.DoneFunc = done
 	return resp, nil
+}
+
+func (c *client) transform(req *http.Request) string {
+	trans := req.Header.Get(transformKey)
+	if trans == "" {
+		return ""
+	}
+	res := struct {
+		Path string `json:"path"`
+		Host string `json:"host"`
+	}{}
+	_ = json.Unmarshal([]byte(trans), &res)
+	if res.Path == "" || res.Host == "" {
+		return ""
+	}
+
+	// 判断当前路由是否符合转发规则
+	if strings.HasSuffix(res.Path, "/*") && strings.HasPrefix(req.URL.Path, strings.TrimSuffix(res.Path, "/*")) {
+		return res.Host
+	}
+
+	if res.Path == req.URL.Path {
+		return res.Host
+	}
+	return ""
 }

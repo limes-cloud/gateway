@@ -39,6 +39,7 @@ func ResponseFormat(response *http.Response) []byte {
 		newRes.Message, _ = m["message"].(string)
 		newRes.Metadata, _ = m["metadata"].(map[string]string)
 		newRes.Reason, _ = m["reason"].(string)
+		newRes.Data, _ = m["data"]
 	} else {
 		newRes.Data = res
 	}
