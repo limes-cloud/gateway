@@ -11,7 +11,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/consul/api v1.28.2
 	github.com/limes-cloud/configure v1.0.39
-	github.com/limes-cloud/kratosx v1.2.3
+	github.com/limes-cloud/kratosx v1.2.6
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/prometheus/client_golang v1.23.0
 	go.opentelemetry.io/otel v1.36.0

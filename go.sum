@@ -154,6 +154,8 @@ github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/limes-cloud/configure v1.0.39 h1:wd6Cl0ryF0V9Qm/cyuHR3YMA9N+KdjtD4nIWuiKceeY=
 github.com/limes-cloud/configure v1.0.39/go.mod h1:LTEn9g5CKCUaJRvdzCc2xCmHVe+JSufXPve6wxQkIoQ=
+github.com/limes-cloud/kratosx v1.2.6 h1:cQeRzJvz2oGJ0uxhSM6RJtyaY5scOSm3K5AMaUH4CVk=
+github.com/limes-cloud/kratosx v1.2.6/go.mod h1:Y6qqTNT8e64DNPFJQlF2hdhDANnqBzzZAiEn+xUiXLQ=
 github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0/go.mod h1:zJYVVT2jmtg6P3p1VtQj7WsuWi/y4VnjVBn7F8KPB3I=
 github.com/lufia/plan9stats v0.0.0-20240408141607-282e7b5d6b74 h1:1KuuSOy4ZNgW0KA2oYIngXVFhQcXxhLqCVK7cBcldkk=
 github.com/lufia/plan9stats v0.0.0-20240408141607-282e7b5d6b74/go.mod h1:ilwx/Dta8jXAgpFYFvSWEMwxmbWXyiUHkd5FwyKhb5k=

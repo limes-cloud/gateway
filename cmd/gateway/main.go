@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/go-kratos/kratos/v2/config/file"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 
 	"github.com/go-kratos/kratos/v2"
+	kc "github.com/go-kratos/kratos/v2/config"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/registry"
 	"github.com/go-kratos/kratos/v2/transport"
@@ -32,7 +35,7 @@ import (
 )
 
 func main() {
-	conf, err := config.New(configure.NewFromEnv())
+	conf, err := config.New(configSource())
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -49,6 +52,17 @@ func main() {
 	if err := app.Run(); err != nil {
 		log.Errorf("run service fail: %v", err)
 	}
+}
+
+func configSource() kc.Source {
+	host := os.Getenv("CONF_HOST")
+	token := os.Getenv("CONF_TOKEN")
+	name := os.Getenv("APP_NAME")
+
+	if host != "" && token != "" && name != "" {
+		return configure.New(host, name, token)
+	}
+	return file.NewSource("config/config.yaml")
 }
 
 func NewServer(conf *config.Config) (transport.Server, error) {
