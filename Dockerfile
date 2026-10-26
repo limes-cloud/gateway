@@ -2,6 +2,7 @@ FROM golang:alpine AS build
 
 #ENV GOPROXY=https://goproxy.cn,direct
 ENV GO111MODULE=on
+ENV GOTOOLCHAIN=auto
 WORKDIR /go/cache
 ADD go.mod .
 ADD go.sum .

@@ -63,7 +63,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
-	github.com/limes-cloud/manager/api v0.0.0
+	github.com/limes-cloud/manager/api v0.0.0-20261026110354-b57fe642f908
 	github.com/lufia/plan9stats v0.0.0-20240408141607-282e7b5d6b74 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -90,5 +90,3 @@ require (
 	google.golang.org/grpc v1.75.0
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/limes-cloud/manager/api v0.0.0 => ../manager/api
