@@ -89,6 +89,24 @@ func setXFFHeader(req *http.Request) {
 	}
 }
 
+// isHopByHopHeader 判断响应头是否为逐跳（hop-by-hop）头，不应透传给客户端
+func isHopByHopHeader(key string, header http.Header) bool {
+	switch http.CanonicalHeaderKey(key) {
+	case "Connection", "Keep-Alive", "Proxy-Authenticate", "Proxy-Authorization",
+		"Te", "Trailer", "Transfer-Encoding", "Upgrade":
+		return true
+	}
+	// Connection 头中声明的自定义头同样视为逐跳头
+	for _, v := range header.Values("Connection") {
+		for _, token := range strings.Split(v, ",") {
+			if strings.EqualFold(strings.TrimSpace(token), key) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func writeError(w http.ResponseWriter, r *http.Request, err error, labels middleware.MetricsLabels) {
 	var statusCode int
 	switch {
@@ -315,6 +333,14 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 				break
 			}
 			markFailed(i, errors.New("assertion failed"))
+			// 最后一次尝试仍命中重试条件：透传该响应，不再重试
+			if i+1 >= retryStrategy.attempts {
+				break
+			}
+			// 关闭本次响应体，避免连接被占用（重试复用连接池）
+			if resp.Body != nil {
+				_ = resp.Body.Close()
+			}
 			// continue the retry loop
 		}
 		if err != nil {
@@ -327,6 +353,9 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 		headers := w.Header()
 		for k, v := range resp.Header {
 			if k == "Content-Length" && hasJson {
+				continue
+			}
+			if isHopByHopHeader(k, resp.Header) {
 				continue
 			}
 			headers[k] = v
@@ -386,8 +415,6 @@ func (p *Proxy) buildEndpoint(e *config.Endpoint, ms []config.Middleware) (_ htt
 			} else {
 				sent, err = io.Copy(w, resp.Body)
 			}
-
-			resp.Header.Set("Content-Length", fmt.Sprint(sent))
 
 			if err != nil {
 				reqOpts.DoneFunc(ctx, selector.DoneInfo{Err: err})

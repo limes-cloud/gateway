@@ -30,8 +30,6 @@ func parseBool(in string, defV bool) bool {
 	return v
 }
 
-var _ = new(router.Router)
-
 type muxRouter struct {
 	*mux.Router
 	wg        *sync.WaitGroup

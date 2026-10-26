@@ -9,21 +9,15 @@ RUN go mod download
 
 WORKDIR /go/build
 ADD . .
-RUN GOOS=linux CGO_ENABLED=0 go build -ldflags="-s -w" -installsuffix cgo -o gateway cmd/gateway/main.go
+RUN GOOS=linux CGO_ENABLED=0 go build -ldflags="-s -w" -installsuffix cgo -o gateway main.go
 
 FROM alpine
 WORKDIR /go/build
 
-# 提供给pipeline使用
-ARG APP_VERSION
-ARG APP_NAME
-ARG CONF_HOST
-ARG CONF_TOKEN
-ENV CONF_HOST=$CONF_HOST
-ENV CONF_TOKEN=$CONF_TOKEN
-ENV APP_NAME=$APP_NAME
-ENV APP_VERSION=$APP_VERSION
-
+# 启动引导配置（镜像内嵌，保底：任何组件不可达时网关仍可启动）
+COPY --from=build /go/build/config/ /go/build/config/
+# 迁移脚本（建表/种子，部署时执行：docker run 挂载或 kubectl cp 后手工执行）
+COPY --from=build /go/build/deploy/ /go/build/deploy/
 
 COPY --from=build /go/build/gateway /go/build/gateway
 CMD ["./gateway"]

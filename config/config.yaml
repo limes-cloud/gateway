@@ -1,83 +1,33 @@
-
-debug: true
-addr: 0.0.0.0:7080
+# 启动引导配置：只描述"如何启动"（网络/连接），路由配置存于 gw_endpoint 表（见 .prd/gateway-route-config-db.md）
+# 注意：debug=true 会暴露 /debug/pprof 与路由调试接口，生产环境必须关闭
+debug: false
+addr: "${PLATFORM_GATEWAY_ADDR:0.0.0.0:7200}"
 name: gateway
 version: v1
-middlewares:
-  - name: bbr
-  - name: cors
-    options:
-      allowCredentials: true
-      allowOrigins:
-        - '*'
-      allowMethods:
-        - GET
-        - POST
-        - PUT
-        - DELETE
-        - OPTIONS
-      AllowHeaders:
-        - Content-Type
-        - Content-Length
-        - Authorization
-      ExposeHeaders:
-        - Content-Length
-        - Access-Control-Allow-Headers
-  - name: tracing
-  - name: logging
-  - name: transcoder
-endpoints:
-  - path: /manager/api/v1/*
-    timeout: 10s
-    protocol: HTTP
-    responseFormat: true
-    backends:
-      - target: 127.0.0.1:7001
-  - path: /resource/api/v1/*
-    timeout: 60s
-    protocol: HTTP
-    responseFormat: true
-    backends:
-      - target: 127.0.0.1:7003
-    middlewares:
-      - name: auth
-        options:
-          url: http://localhost:7080/manager/api/v1/auth
-          method: POST
-          whiteList:
-            - path: /resource/api/v1/static/*
-              method: GET
-  - path: /resource/client/*
-    timeout: 60s
-    protocol: HTTP
-    responseFormat: true
-    backends:
-      - target: 127.0.0.1:7003
-    middlewares:
-      - name: auth
-        options:
-          url: http://localhost:7080/usercenter/client/v1/auth
-          method: POST
-  - path: /usercenter/api/v1/*
-    timeout: 60s
-    protocol: HTTP
-    responseFormat: true
-    backends:
-      - target: 127.0.0.1:7004
-    middlewares:
-      - name: auth
-        options:
-          url: http://localhost:7080/manager/api/v1/auth
-          method: POST
-  - path: /usercenter/client/v1/*
-    timeout: 60s
-    protocol: HTTP
-    responseFormat: true
-    backends:
-      - target: 127.0.0.1:7004
-  - path: /configure/api/v1/*
-    timeout: 60s
-    protocol: HTTP
-    responseFormat: true
-    backends:
-      - target: 127.0.0.1:6081
+
+# manager gRPC 地址（启动时自注册菜单/权限点用，失败仅告警不阻断启动）
+managerAddr: "${PLATFORM_MANAGER_GRPC:127.0.0.1:8202}"
+# manager 接口签名密钥（与 kratosx 算法一致，与 resource/configure 的 client 配置对齐）
+managerSignAk: "manager"
+managerSignSk: "manager"
+# 管理 API 鉴权服务地址（/gateway/api/* 的 token 校验）
+# 置空 = 本地开发不鉴权（仅内网使用）；生产配置为 manager 的 token 验证接口
+adminAuthUrl: "${PLATFORM_GATEWAY_ADMIN_AUTH_URL:}"
+
+# gateway 自有库（路由配置事实源；enable=false 或未配置时网关退化为纯本地文件模式）
+database:
+  - enable: true
+    name: default
+    drive: mysql
+    connect:
+      host: "${PLATFORM_DB_HOST:127.0.0.1}"
+      port: "${PLATFORM_DB_PORT:3306}"
+      dbName: "${PLATFORM_GATEWAY_DB_NAME:gateway}"
+      username: "${PLATFORM_GATEWAY_DB_USER:root}"
+      password: "${PLATFORM_GATEWAY_DB_PASSWORD:root}"
+
+# 共享快照 + 发布通知（多容器一致）
+redis:
+  - enable: true
+    name: cache
+    host: "${PLATFORM_REDIS_ADDR:127.0.0.1:6379}"

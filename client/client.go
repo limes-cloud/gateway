@@ -76,7 +76,9 @@ func (c *client) RoundTrip(req *http.Request) (*http.Response, error) {
 		reqOpt.UpstreamStatusCode = append(reqOpt.UpstreamStatusCode, 0)
 		return nil, err
 	}
-	resp.Header.Set(consts.TRACE_ID, tracing.TraceID()(ctx).(string))
+	if traceID, ok := tracing.TraceID()(ctx).(string); ok && traceID != "" {
+		resp.Header.Set(consts.TRACE_ID, traceID)
+	}
 
 	reqOpt.UpstreamStatusCode = append(reqOpt.UpstreamStatusCode, resp.StatusCode)
 	reqOpt.DoneFunc = done

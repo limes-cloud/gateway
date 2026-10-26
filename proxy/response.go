@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/spf13/cast"
+
 	"github.com/limes-cloud/gateway/consts"
 )
 
@@ -17,12 +19,12 @@ type Response struct {
 	TraceID  string            `json:"traceId,omitempty"`
 }
 
-func ResponseFormat(response *http.Response) []byte {
+func parseResponse(response *http.Response) ([]byte, Response, bool) {
 	b, _ := io.ReadAll(response.Body)
 
 	var res any
 	if err := json.Unmarshal(b, &res); err != nil {
-		return b
+		return b, Response{}, false
 	}
 
 	newRes := Response{
@@ -31,29 +33,35 @@ func ResponseFormat(response *http.Response) []byte {
 		Reason:  consts.HTTP_SUCCESS_REASON,
 		TraceID: response.Header.Get(consts.TRACE_ID),
 	}
-	// 上游返回error
-	m, ok := res.(map[string]any)
 
-	if ok && m["code"] != nil && m["reason"] != nil {
-		newRes.Code, _ = m["code"].(int32)
-		newRes.Message, _ = m["message"].(string)
-		newRes.Metadata, _ = m["metadata"].(map[string]string)
-		newRes.Reason, _ = m["reason"].(string)
-		newRes.Data, _ = m["data"]
+	m, ok := res.(map[string]any)
+	if ok && m["code"] != nil {
+		newRes.Code = cast.ToInt32(m["code"])
+		newRes.Message = cast.ToString(m["message"])
+		newRes.Metadata = cast.ToStringMapString(m["metadata"])
+		newRes.Reason = cast.ToString(m["reason"])
+		newRes.Data = m["data"]
 	} else {
 		newRes.Data = res
 	}
 
-	b, _ = json.Marshal(newRes)
+	return nil, newRes, true
+}
+
+func ResponseFormat(response *http.Response) []byte {
+	raw, newRes, ok := parseResponse(response)
+	if !ok {
+		return raw
+	}
+	b, _ := json.Marshal(newRes)
 	return b
 }
 
 func GetData(response *http.Response) []byte {
-	b, _ := io.ReadAll(response.Body)
-	res := Response{}
-	if err := json.Unmarshal(b, &res); err != nil {
-		return b
+	raw, newRes, ok := parseResponse(response)
+	if !ok {
+		return raw
 	}
-	b, _ = json.Marshal(res.Data)
+	b, _ := json.Marshal(newRes.Data)
 	return b
 }

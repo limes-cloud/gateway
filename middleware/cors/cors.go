@@ -51,6 +51,9 @@ func isOriginAllowed(origin string, allowOriginHosts []string) bool {
 	hostname := strings.ToLower(originURL.Hostname())
 	for _, host := range allowOriginHosts {
 		host = strings.ToLower(host)
+		if host == "" {
+			continue
+		}
 		if host[0] != '*' {
 			if hostname == host {
 				return true

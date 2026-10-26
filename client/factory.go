@@ -72,7 +72,6 @@ func (na *nodeApplier) apply(ctx context.Context) error {
 		case "direct":
 			node := newNode(backend.Target, na.endpoint.Protocol, backend.Weight, map[string]string{}, "", "")
 			nodes = append(nodes, node)
-			na.picker.Apply(nodes)
 		case "discovery":
 			existed := AddWatch(ctx, na.registry, target.Endpoint, na)
 			if existed {
@@ -81,6 +80,10 @@ func (na *nodeApplier) apply(ctx context.Context) error {
 		default:
 			return fmt.Errorf("unknown scheme: %s", target.Scheme)
 		}
+	}
+	// 统一应用全部直接节点（循环外执行一次，避免重复 Apply）
+	if len(nodes) > 0 {
+		na.picker.Apply(nodes)
 	}
 	return nil
 }
@@ -92,11 +95,13 @@ func nodeWeight(n *registry.ServiceInstance) *int64 {
 	if ok {
 		val, _ := strconv.ParseInt(w, 10, 64)
 		if val <= 0 {
-			return &_defaultWeight
+			weight := _defaultWeight
+			return &weight
 		}
 		return &val
 	}
-	return &_defaultWeight
+	weight := _defaultWeight
+	return &weight
 }
 
 func (na *nodeApplier) Callback(services []*registry.ServiceInstance) error {

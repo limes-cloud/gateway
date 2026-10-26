@@ -102,6 +102,10 @@ func Middleware(c *config.Middleware) (middleware.Middleware, error) {
 				}
 				return newResponse(200, resp.Header, data)
 			}
+			// gRPC 响应至少包含 5 字节头（1 字节压缩标志 + 4 字节长度），过短为非法响应
+			if len(data) < 5 {
+				return nil, io.ErrUnexpectedEOF
+			}
 			resp.Body = io.NopCloser(bytes.NewReader(data[5:]))
 			resp.ContentLength = int64(len(data) - 5)
 			// Any content length that might be set is no longer accurate because of trailers.
