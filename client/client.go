@@ -1,0 +1,111 @@
+package client
+
+import (
+	"encoding/json"
+	"io"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/go-kratos/kratos/v2/middleware/tracing"
+	"github.com/go-kratos/kratos/v2/selector"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+
+	"github.com/limes-cloud/gateway/consts"
+	"github.com/limes-cloud/gateway/middleware"
+)
+
+const (
+	transformKey = "X-WG-Transform"
+)
+
+type client struct {
+	applier  *nodeApplier
+	selector selector.Selector
+}
+
+type Client interface {
+	http.RoundTripper
+	io.Closer
+}
+
+func newClient(applier *nodeApplier, selector selector.Selector) *client {
+	return &client{
+		applier:  applier,
+		selector: selector,
+	}
+}
+
+func (c *client) Close() error {
+	c.applier.Cancel()
+	return nil
+}
+
+func (c *client) RoundTrip(req *http.Request) (*http.Response, error) {
+	ctx := req.Context()
+	reqOpt, _ := middleware.FromRequestContext(ctx)
+	filter, _ := middleware.SelectorFiltersFromContext(ctx)
+	n, done, err := c.selector.Select(ctx, selector.WithNodeFilter(filter...))
+	if err != nil {
+		return nil, err
+	}
+	reqOpt.CurrentNode = n
+
+	addr := n.Address()
+	// 判断是否进行转发
+	tAddr := c.transform(req)
+	if tAddr != "" {
+		addr = tAddr
+	}
+
+	reqOpt.Backends = append(reqOpt.Backends, addr)
+	req.URL.Host = addr
+	req.URL.Scheme = "http"
+	req.RequestURI = ""
+	req.Header.Del(transformKey)
+	startAt := time.Now()
+
+	// Inject the context into the HTTP headers
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
+
+	resp, err := n.(*node).client.Do(req)
+	reqOpt.UpstreamResponseTime = append(reqOpt.UpstreamResponseTime, time.Since(startAt).Seconds())
+	if err != nil {
+		done(ctx, selector.DoneInfo{Err: err})
+		reqOpt.UpstreamStatusCode = append(reqOpt.UpstreamStatusCode, 0)
+		return nil, err
+	}
+	if traceID, ok := tracing.TraceID()(ctx).(string); ok && traceID != "" {
+		resp.Header.Set(consts.TRACE_ID, traceID)
+	}
+
+	reqOpt.UpstreamStatusCode = append(reqOpt.UpstreamStatusCode, resp.StatusCode)
+	reqOpt.DoneFunc = done
+	return resp, nil
+}
+
+func (c *client) transform(req *http.Request) string {
+	trans := req.Header.Get(transformKey)
+	if trans == "" {
+		return ""
+	}
+	res := struct {
+		Path string `json:"path"`
+		Host string `json:"host"`
+	}{}
+	_ = json.Unmarshal([]byte(trans), &res)
+	if res.Path == "" || res.Host == "" {
+		return ""
+	}
+
+	// 判断当前路由是否符合转发规则
+	if strings.HasSuffix(res.Path, "/*") && strings.HasPrefix(req.URL.Path, strings.TrimSuffix(res.Path, "/*")) {
+		return res.Host
+	}
+
+	if res.Path == req.URL.Path {
+		return res.Host
+	}
+	return ""
+}
